@@ -1,0 +1,17 @@
+# Mac
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# VSCode
+.vscode/
+
+# Ignore files
+test.py
+secrets.py
+
+# git rm --cached test.py
+# git add .gitignore
+# git commit -m "Ignore test.py"git c

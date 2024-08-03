@@ -1,0 +1,6 @@
+ccxt
+schedule
+matplotlib
+pandas
+numpy
+cython
