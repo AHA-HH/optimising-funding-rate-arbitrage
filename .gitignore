@@ -10,8 +10,8 @@ __pycache__/
 
 # Ignore files
 test.py
-secrets.py
+apikeys.py
 
 # git rm --cached test.py
 # git add .gitignore
-# git commit -m "Ignore test.py"git c
+# git commit -m "Ignore test.py"
