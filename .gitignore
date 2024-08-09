@@ -10,7 +10,7 @@ __pycache__/
 
 # Ignore files
 test.py
-apikeys.py
+miscellaneous.py
 
 # git rm --cached test.py
 # git add .gitignore
