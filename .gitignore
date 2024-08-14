@@ -11,7 +11,7 @@ __pycache__/
 # Ignore files
 test.py
 miscellaneous.py
-/data/raw/
+/data/
 
 # git rm --cached test.py
 # git add .gitignore
