@@ -1,3 +1,3 @@
 # Bitcoin Cross-Exchange Arbitrage to Exploit Funding Rate
 
-Reinforcement learning for execution optimization - this project aims to explore and develop a reinforcement learning (RL) model focused on market making and execution optimization in the domain of financial trading. The goal is to create an algorithm that can efficiently balance the dual objectives of inventory risk management and best execution under dynamic market conditions.
+Exploit the funding rate across multiple exchanges in a delta-neutral strategy.
