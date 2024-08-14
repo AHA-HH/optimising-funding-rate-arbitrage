@@ -96,7 +96,4 @@ class DataHandler:
         merged_df.to_csv(save_path, index=False)
         print(f"Final data saved to {save_path}")
 
-        print("Final Processed DataFrame:")
-        print(merged_df.head())
-
         return merged_df
