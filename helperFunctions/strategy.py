@@ -73,15 +73,15 @@ class Strategy:
             
         @property
         def net_profit(self):
-            return (self.position_profit + self.funding_rate_profit - self.transaction_cost -self.liquidation_cost)
+            return (self.position_profit + self.funding_rate_profit - self.transaction_cost - self.liquidation_cost)
         
         @property
         def unrealised_profit(self):
             if self.long_position:
-                return self.long_position.unrealized_profit(
-                self.current_prices[self.long_position.security]
-            ) + self.short_position.unrealized_profit(
-                self.current_prices[self.short_position.security]
+                return self.long_position.unrealised_profit(
+                self.current_prices[self.long_position.asset]
+            ) + self.short_position.unrealised_profit(
+                self.current_prices[self.short_position.asset]
             )
             else:
                 return 0

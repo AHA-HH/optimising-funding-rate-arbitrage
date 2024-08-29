@@ -89,4 +89,4 @@ class Position:
         self.net_profit = self.gross_profit - self.transaction_cost - self.liquidation_cost
 
         self.closed = True
-        
+         
