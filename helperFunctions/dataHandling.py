@@ -66,44 +66,45 @@ class DataHandler:
         ex = getattr(ccxt, exchange)()
         ohlcv_data = []
 
-        # Calculate the maximum interval (200 days) in milliseconds
-        max_interval = 200 * 24 * 60 * 60 * 1000  # 200 days in milliseconds
+        if exchange == 'binance':
+            # Calculate the maximum interval (200 days) in milliseconds
+            max_interval = 200 * 24 * 60 * 60 * 1000  # 200 days in milliseconds
 
-        while start_time < end_time:
-            # Set the current end time to be the lesser of the actual end_time or 200 days after start_time
-            current_end_time = min(start_time + max_interval, end_time)
+            while start_time < end_time:
+                # Set the current end time to be the lesser of the actual end_time or 200 days after start_time
+                current_end_time = min(start_time + max_interval, end_time)
 
-            # Fetch OHLCV data for this interval
-            candles = ex.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit, since=start_time, params={"endTime": current_end_time})
+                # Fetch OHLCV data for this interval
+                candles = ex.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit, since=start_time, params={"endTime": current_end_time})
 
-            if not candles:
-                print("No more candles found.")
-                break
+                if not candles:
+                    print("No more candles found.")
+                    break
 
-            # Convert the timestamp to human-readable format and extend the list
-            formatted_candles = [
-                [
-                    datetime.fromtimestamp(candle[0] / 1000).strftime('%Y-%m-%d %H:%M:%S'),  # Format timestamp
-                    candle[1],  # Open
-                    candle[2],  # High
-                    candle[3],  # Low
-                    candle[4],  # Close
-                    candle[5],  # Volume
+                # Convert the timestamp to human-readable format and extend the list
+                formatted_candles = [
+                    [
+                        datetime.fromtimestamp(candle[0] / 1000).strftime('%Y-%m-%d %H:%M:%S'),  # Format timestamp
+                        candle[1],  # Open
+                        candle[2],  # High
+                        candle[3],  # Low
+                        candle[4],  # Close
+                        candle[5],  # Volume
+                    ]
+                    for candle in candles
                 ]
-                for candle in candles
-            ]
 
-            ohlcv_data.extend(formatted_candles)
+                ohlcv_data.extend(formatted_candles)
 
-            # Update start_time to the timestamp of the last fetched candlestick + 1 to avoid duplicates
-            start_time = candles[-1][0] + 1
+                # Update start_time to the timestamp of the last fetched candlestick + 1 to avoid duplicates
+                start_time = candles[-1][0] + 1
 
-            # If we fetched less than the limit, we assume there's no more data available
-            if len(candles) < limit:
-                print("Fetched less than the limit. Possibly no more data available.")
-                break
-            
-            print(f"Fetched {len(candles)} candles. New start_time: {datetime.fromtimestamp(start_time / 1000)}")
+                # If we fetched less than the limit, we assume there's no more data available
+                if len(candles) < limit:
+                    print("Fetched less than the limit. Possibly no more data available.")
+                    break
+                
+                print(f"Fetched {len(candles)} candles. New start_time: {datetime.fromtimestamp(start_time / 1000)}")
 
         print(f"Total candles fetched: {len(ohlcv_data)}")
         return ohlcv_data
@@ -126,20 +127,22 @@ class DataHandler:
         spot_df = pd.DataFrame(spot_data, columns=["time", "open", "high", "low", "close", "volume"])
         
         spot_df['exchange'] = exchange
+        if symbol == 'BTC/USDT':
+            spot_df['crypto'] = 'bitcoin'
+        elif symbol == 'ETH/USDT':
+            spot_df['crypto'] = 'ethereum'
         spot_df['pair'] = symbol
         spot_df['contract'] = 'spot'
         
         multi_index = pd.MultiIndex.from_arrays(
-            [spot_df['time'], spot_df['exchange'], spot_df['pair'], spot_df['contract']],
-            names=['time', 'exchange', 'pair', 'contract']
+            [spot_df['time'], spot_df['exchange'], spot_df['crypto'], spot_df['pair'], spot_df['contract']],
+            names=['time', 'exchange', 'crypto', 'pair', 'contract']
         )
         spot_df.set_index(multi_index, inplace=True)
         
-        spot_df.drop(columns=['time', 'exchange', 'pair', 'contract'], inplace=True)
+        spot_df.drop(columns=['time', 'exchange', 'crypto', 'pair', 'contract'], inplace=True)
         spot_df['funding rate'] = np.nan
         
-        # spot_df.to_csv(f'./data/processed/{filename}.csv', index=True)
-        # print(f'Data saved to ./data/processed/{filename}.csv')
         return spot_df
 
 
@@ -165,19 +168,21 @@ class DataHandler:
         perp_df = pd.merge(perp_cs_df, perp_fr_df, on="time")
         
         perp_df['exchange'] = exchange
+        if pair == 'BTCUSDT' or pair == 'BTCUSDCM':
+            perp_df['crypto'] = 'bitcoin'
+        elif pair == 'ETHUSDT' or pair == 'ETHUSDCM':
+            perp_df['crypto'] = 'ethereum'
         perp_df['pair'] = pair
         perp_df['contract'] = 'perpetual'
         
         multi_index = pd.MultiIndex.from_arrays(
-            [perp_df['time'], perp_df['exchange'], perp_df['pair'], perp_df['contract']],
-            names=['time', 'exchange', 'pair', 'contract']
+            [perp_df['time'], perp_df['exchange'], perp_df['crypto'], perp_df['pair'], perp_df['contract']],
+            names=['time', 'exchange', 'crypto', 'pair', 'contract']
         )
         perp_df.set_index(multi_index, inplace=True)
         
-        perp_df.drop(columns=['time', 'exchange', 'pair', 'contract'], inplace=True)
+        perp_df.drop(columns=['time', 'exchange', 'crypto', 'pair', 'contract'], inplace=True)
         
-        # perp_df.to_csv(f'./data/processed/{filename}.csv', index=True)
-        # print(f'Data saved to ./data/processed/{filename}.csv')
         return perp_df
     
     def merge_dfs(self, df1: pd.DataFrame, df2: pd.DataFrame, filename: str) -> pd.DataFrame:

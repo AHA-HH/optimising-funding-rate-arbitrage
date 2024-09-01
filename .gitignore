@@ -12,6 +12,7 @@ __pycache__/
 test.py
 miscellaneous.py
 roughCode.py
+comparison.py
 /data/
 
 # git rm --cached test.py
