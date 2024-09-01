@@ -31,6 +31,10 @@ bin_df = dataHandler.merge_dfs(bin_btc, bin_eth, 'binance')
 
 print("Binance data saved")
 
+# bin_btc_test_df = dataHandler.merge_dfs(bin_btc_usdm, bin_btc_spot, 'binance_btc_test')
+
+# print("Binance data saved")
+
 # okx_btc_spot = dataHandler.make_spot_df(exchange="okx", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp)
 # okx_btc_usdm = dataHandler.make_perp_df(exchange="okx", symbol="BTC-USDT-SWAP", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp)
 # okx_btc_coinm = dataHandler.make_perp_df(exchange="okx", symbol="BTC-USD-SWAP", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp)

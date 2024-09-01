@@ -39,3 +39,5 @@
 # ETH/USDT          ETHUSD Spot
 # ETH/USDT:USDT     ETH USD Margin
 # ETH/USD:ETH       ETH Coin Margin
+
+df = pd.read_csv('./data/processed/binance.csv')
