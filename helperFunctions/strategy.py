@@ -104,7 +104,6 @@ class Strategy:
         # Create a new long position
         new_long_position = Position(
             position_type='long',
-            # position_size=position_capital,
             exchange=exchange,
             crypto=crypto,
             pair=spot_pair,
@@ -116,11 +115,7 @@ class Strategy:
         
         collateral = new_long_position.quantity * new_long_position.open_price
         
-        
         self.portfolio.open_position(new_long_position)
-        
-        self.portfolio.unallocated_capital -= position_capital
-        
         
         # Create a new short position
         new_short_position = Position(
@@ -137,7 +132,6 @@ class Strategy:
         self.portfolio.open_position(new_short_position)
         
     
-                
     def generate_exit_signals(self, current_time) -> None:
         """
         Identify sell opportunity based on the funding rate.
@@ -186,10 +180,6 @@ class Strategy:
         close_short_position = self.portfolio.find_open_position(crypto, future_pair, exchange, 'short', margin)
         
         if close_short_position is not None:
-        
-            collateral_used = close_short_position.quantity * close_price
-            
-            # if close_short_position:
             self.portfolio.close_position(close_short_position, close_price, time)
             
             
@@ -202,15 +192,8 @@ class Strategy:
         close_long_position = self.portfolio.find_open_position(crypto, spot_pair, exchange, 'long', margin)
         
         if close_long_position is not None:
-        
-            capital_returned = close_long_position.quantity * spot_price
-
-            
-            # if close_long_position:
             self.portfolio.close_position(close_long_position, spot_price, time)
-            
-            self.portfolio.unallocated_capital += capital_returned
-        
+
         
     def run(self):
         """
@@ -222,32 +205,49 @@ class Strategy:
         # for current_time in timestamps:
         for current_time in timestamps[0:10]:
             print(current_time)
-            for position in self.portfolio.get_open_short_positions():
-                self.portfolio.calculate_funding_payment(self.df, position, current_time)
-                # print(self.calculate_funding_payment(position, current_time))
+            for short_position in self.portfolio.get_open_short_positions():
+                long_position = self.portfolio.get_corresponding_long_position(short_position)
+                self.portfolio.calculate_funding_payment_and_pnl_interval(self.df, short_position, long_position, current_time)
+                
+            for signal in self.generate_exit_signals(current_time):
+                # if signal is in self.portfolio.get_open_short_positions(): then close positions, should come before entry signals
+                    self.close_positions(signal)
+                
             for signal in self.generate_entry_signals(current_time):
                 if self.check_entry_signal(signal) == True:
                     self.open_positions(signal)
-            for signal in self.generate_exit_signals(current_time):
-                    self.close_positions(signal)
                     
-        # print(self.logger.get_logs())
+            self.portfolio.calculate_collateral_values(self.df, current_time)
+                    
         print(self.portfolio.logger.get_logs(log_type='trades'))
-                    
-        # print(self.portfolio.unallocated_capital)
-        # print(self.portfolio.fr_capital)
                     
         print(f"Total number of trades executed: {self.portfolio.trade_count}")
         print(f"Total number of trades opened: {self.portfolio.trade_open_count}")
         print(f"Total number of trades closed: {self.portfolio.trade_close_count}")
         
+        
+        funding_payments_log = self.portfolio.logger.get_logs(log_type='funding_payments')
+
+        # Check if the log is not empty
+        if funding_payments_log:
+            # Convert the list of dictionaries to a DataFrame
+            funding_payments_df = pd.DataFrame(funding_payments_log)
+            
+            # Sum the values in the 'funding payment' column
+            total_funding_payments = funding_payments_df['funding payment'].sum()
+            print(f"Total Funding Payments: {total_funding_payments}")
+        else:
+            print("No funding payments logged.")
+        
         # print(self.portfolio.get_open_positions())
         # print(self.portfolio.get_closed_positions())
         # print(self.portfolio.get_open_short_positions())
         
-        print(self.portfolio.logger.get_logs(log_type='funding_payments'))
+        # print(self.portfolio.logger.get_logs(log_type='funding_payments'))
+        
+        print(self.portfolio.logger.get_logs(log_type='collateral_values'))
         
         # for position in self.portfolio.positions:
         #     print(position)
                 
-        # print("Backtest completed.")
+        print("Backtest completed.")

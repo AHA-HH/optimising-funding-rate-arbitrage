@@ -3,8 +3,8 @@ class Logger:
     def __init__(self):
         self.logs = {
             'trades': [],  # To log trade data
-            'funding_payments': []  # To log funding rate payments
-            # 'portfolio_values': []  # To log portfolio values over time
+            'funding_payments': [],  # To log funding rate payments
+            'collateral_values': []  # To log collateral position values over time
         }
         
     def log_trade(self, position: Position, action: str):
@@ -50,7 +50,8 @@ class Logger:
                     # trade['pnl'] = (position.close_price - position.open_price) * position.quantity - (position.open_transaction_cost + position.close_transaction_cost)
                     break
 
-    def log_funding_payment(self, time: str, position: Position, payment: float):
+
+    def log_funding_payment_and_pnl(self, time: str, position: Position, payment: float, pnl: float):
         """
         Log the funding payment for a specific asset at a given time.
         """
@@ -58,8 +59,23 @@ class Logger:
             'time': time,
             'exchange': position.exchange,
             'pair': position.pair,
-            'funding payment': payment
+            'funding payment': payment,
+            'pnl': pnl
         })
+        
+        
+    def log_collateral(self, time: str, binance_btc_collateral: float, binance_eth_collateral: float, binance_usdt_collateral: float, unallocated_collateral: float):
+        """
+        Log the collateral values at a given time.
+        """
+        self.logs['collateral_values'].append({
+            'time': time,
+            'btc_collateral': binance_btc_collateral,
+            'eth_collateral': binance_eth_collateral,
+            'liquid_collateral': binance_usdt_collateral,
+            'unallocated_collateral': unallocated_collateral
+        })
+        
 
     def get_logs(self, log_type: str = None):
         """
