@@ -4,17 +4,18 @@ from dataclasses import dataclass
 @dataclass
 class Position:
     position_type: str
+    # position_size: float # inital size before fees in usd
     exchange: str
     crypto: str
     pair: str
     margin: str
     open_time: str
-    quantity: float
+    quantity: float # in coin
     # carryover_open_quantity: float
     open_price: float
-    # open_transaction_cost: float = 0
+    open_transaction_cost: float = 0
     close_price: float = None
-    # close_transaction_cost: float = 0
+    close_transaction_cost: float = 0
     close_time: str = None
     closed: bool = False
     # transaction_cost_pct: float = 0.0003
