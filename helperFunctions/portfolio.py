@@ -1,4 +1,7 @@
+import pandas as pd
+
 from helperFunctions.position import Position
+from helperFunctions.logging import Logger
 
 class Portfolio:
     def __init__(self, initial_capital: float = 0) -> None:
@@ -9,6 +12,8 @@ class Portfolio:
         self.initial_capital = initial_capital
         self.unallocated_capital = initial_capital
         self.fr_capital = 0
+        
+        self.logger = Logger()
         
         
     # @staticmethod
@@ -36,6 +41,7 @@ class Portfolio:
                 not position.closed):
                 return position
         return None
+    
 
     def open_position(self, position: Position):
         """
@@ -45,9 +51,8 @@ class Portfolio:
             self.positions.append(position)
             self.trade_count += 1
             self.trade_open_count += 1
-        #     print(f"Opened {position.position_type} Position at {position.open_time} for {position.pair} on {position.exchange} at {position.open_price}")
-        # else:
-        #     print(f"Position already open for {position.crypto} on {position.exchange}.")
+            self.logger.log_trade(position, 'open')
+
 
     def close_position(self, position: Position, close_price: float, close_time: str):
         """
@@ -58,7 +63,8 @@ class Portfolio:
         position.closed = True
         self.trade_count += 1
         self.trade_close_count += 1
-        # print(f"Closed {position.position_type} Position for {position.pair} on {position.exchange} at {close_price}")
+        self.logger.log_trade(position, 'close')
+
 
     def get_open_positions(self):
         """
@@ -66,11 +72,13 @@ class Portfolio:
         """
         return [position for position in self.positions if not position.closed]
 
+
     def get_closed_positions(self):
         """
         Return a list of all closed positions.
         """
         return [position for position in self.positions if position.closed]
+    
     
     def get_open_short_positions(self):
         """
@@ -78,11 +86,13 @@ class Portfolio:
         """
         return [position for position in self.positions if not position.closed and position.position_type == "short"]
 
+
     # def calculate_portfolio_value(self):
     #     """
     #     Calculate the current value of the portfolio.
     #     """
     #     pass
+    
     
     # def calculate_portfolio_weighting(self):
     #     """
@@ -90,11 +100,13 @@ class Portfolio:
     #     """
     #     pass
     
+    
     # def rebalance_portfolio(self):
     #     """
     #     Rebalance the portfolio based on the current weighting of each asset.
     #     """
     #     pass
+    
     
     def calculate_position_size(self):
         """
@@ -104,18 +116,24 @@ class Portfolio:
         #     raise Exception("No capital available for trading")
         position_size = self.unallocated_capital
         return position_size
-        
     
-    def calculate_capital(self):
+    
+    def calculate_funding_payment(self, df: pd.DataFrame, position: Position, time) -> float:
         """
-        Calculate the current capital available for trading.
+        Calculate the funding rate payment for a given position.
         """
-        print(self.unallocated_capital)
+        matching_row = df[
+            (df['time'] == time) & 
+            (df['exchange'] == position.exchange) & 
+            (df['pair'] == position.pair)
+        ]
         
-        
-    def calculate_exchange_capital(self, exchange: str):
-        """
-        Calculate the current capital available for trading on a specific exchange.
-        """
-        
-        
+        if not matching_row.empty:
+            funding_rate = matching_row['funding rate'].values[0]
+            if position.margin == 'usd':
+                mark_price = matching_row['open'].values[0]
+                funding_payment = funding_rate * position.quantity * mark_price
+            elif position.margin == 'coin':
+                funding_payment = funding_rate * position.quantity
+            
+            self.logger.log_funding_payment(time, position, funding_payment)

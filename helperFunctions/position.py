@@ -10,12 +10,12 @@ class Position:
     pair: str
     margin: str
     open_time: str
-    quantity: float # in coin
-    # carryover_open_quantity: float
     open_price: float
-    open_transaction_cost: float = 0
+    # open_transaction_cost: float = 0
+    # carryover_open_quantity: float
+    # close_transaction_cost: float = 0
+    quantity: float # in coin
     close_price: float = None
-    close_transaction_cost: float = 0
     close_time: str = None
     closed: bool = False
     # transaction_cost_pct: float = 0.0003
