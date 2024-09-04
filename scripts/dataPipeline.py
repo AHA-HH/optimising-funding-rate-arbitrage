@@ -78,25 +78,3 @@ print("Binance data saved")
 # bybit_df = dataHandler.merge_dfs(bybit_btc, bybit_eth, 'bybit')
 
 # print("Bybit data saved")
-
-# bitget_btc_spot = dataHandler.make_spot_df(exchange="bitget", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp, timeframe='4h')
-# bitget_btc_usdm = dataHandler.make_perp_df(exchange="bitget", symbol="BTC/USDT:USDT", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp, timeframe='4h')
-# bitget_btc_coinm = dataHandler.make_perp_df(exchange="bitget", symbol="BTCUSD", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp, timeframe='4h')
-
-# bitget_btc_perp = dataHandler.merge_dfs(bitget_btc_usdm, bitget_btc_coinm, 'bitget_btc')
-# bitget_btc = dataHandler.merge_dfs(bitget_btc_perp, bitget_btc_spot, 'bitget_btc')
-
-# print("Bitget BTC saved")
-
-# bitget_eth_spot = dataHandler.make_spot_df(exchange="bitget", symbol="ETH/USDT", start_time=start_timestamp, end_time=end_timestamp, timeframe='4h')
-# bitget_eth_usdm = dataHandler.make_perp_df(exchange="bitget", symbol="ETH/USDT:USDT", pair="ETHUSDT", start_time=start_timestamp, end_time=end_timestamp, timeframe='4h')
-# bitget_eth_coinm = dataHandler.make_perp_df(exchange="bitget", symbol="ETHUSD", pair="ETHUSDCM", start_time=start_timestamp, end_time=end_timestamp, timeframe='4h')
-
-# bitget_eth_perp = dataHandler.merge_dfs(bitget_eth_usdm, bitget_eth_coinm, 'bitget_eth')
-# bitget_eth = dataHandler.merge_dfs(bitget_eth_perp, bitget_eth_spot, 'bitget_eth')
-
-# print("Bitget ETH saved")
-
-# bitget_df = dataHandler.merge_dfs(bitget_btc, bitget_eth, 'bitget')
-
-# print("Bitget data saved")

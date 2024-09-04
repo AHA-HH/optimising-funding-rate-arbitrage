@@ -99,7 +99,8 @@ class Strategy:
         else:
             raise ValueError("Invalid future pair.")
         
-        position_capital = self.portfolio.calculate_position_size()
+        # position_capital = self.portfolio.calculate_position_size()
+        position_capital = self.capital
         
         # Create a new long position
         new_long_position = Position(
@@ -200,30 +201,52 @@ class Strategy:
         Run the backtest.
         """
         timestamps = self.df['time'].unique()
-        # print(self.portfolio.initial_capital)
+        # # print(self.portfolio.initial_capital)
         
+        # loop through all timestamps
         # for current_time in timestamps:
-        for current_time in timestamps[0:10]:
+        for current_time in timestamps[0:1]:
             print(current_time)
+            
+            
+            # look for open short positions and calculate funding rate payments
             for short_position in self.portfolio.get_open_short_positions():
                 long_position = self.portfolio.get_corresponding_long_position(short_position)
                 self.portfolio.calculate_funding_payment_and_pnl_interval(self.df, short_position, long_position, current_time)
                 
+                
+            # look for negative funding rates and close positions that match the signal
             for signal in self.generate_exit_signals(current_time):
                 # if signal is in self.portfolio.get_open_short_positions(): then close positions, should come before entry signals
                     self.close_positions(signal)
                 
+                
+            # calculate notional value of portfolio and the max position size
+            collateral_notional = self.portfolio.calculate_collateral_values(self.df, current_time)
+            max_position_size = self.portfolio.calculate_max_portfolio_value_weightings(collateral_notional)
+            print(max_position_size['assets']['binance']['BTC']['max_value'])
+            
+            
+            # look for positive funding rates and open positions that match the signal
             for signal in self.generate_entry_signals(current_time):
                 if self.check_entry_signal(signal) == True:
+                    
                     self.open_positions(signal)
                     
-            self.portfolio.calculate_collateral_values(self.df, current_time)
+            # self.portfolio.calculate_collateral_values(self.df, current_time)
                     
-        print(self.portfolio.logger.get_logs(log_type='trades'))
+        # print(self.portfolio.logger.get_logs(log_type='trades'))
                     
         print(f"Total number of trades executed: {self.portfolio.trade_count}")
         print(f"Total number of trades opened: {self.portfolio.trade_open_count}")
         print(f"Total number of trades closed: {self.portfolio.trade_close_count}")
+        
+        trades_log = self.portfolio.logger.get_logs(log_type='trades')
+        
+        if trades_log:
+            trades_df = pd.DataFrame(trades_log)
+            trades_df.to_csv('./data/raw/trades_log.csv', index=False)
+            print("Trades saved to 'trades_log.csv'.")
         
         
         funding_payments_log = self.portfolio.logger.get_logs(log_type='funding_payments')
@@ -236,16 +259,26 @@ class Strategy:
             # Sum the values in the 'funding payment' column
             total_funding_payments = funding_payments_df['funding payment'].sum()
             print(f"Total Funding Payments: {total_funding_payments}")
+            # Save the DataFrame to a CSV file
+            funding_payments_df.to_csv('./data/raw/funding_payments_log.csv', index=False)
+            print("Funding payments saved to 'funding_payments_log.csv'.")
         else:
             print("No funding payments logged.")
         
-        # print(self.portfolio.get_open_positions())
-        # print(self.portfolio.get_closed_positions())
-        # print(self.portfolio.get_open_short_positions())
-        
-        # print(self.portfolio.logger.get_logs(log_type='funding_payments'))
-        
-        print(self.portfolio.logger.get_logs(log_type='collateral_values'))
+        # print(self.portfolio.logger.get_logs(log_type='collateral_values'))
+        # collateral_values = self.portfolio.logger.get_logs(log_type='collateral_values')
+
+        # # Check if there are any logs to save
+        # if collateral_values:
+        #     # Convert the list of logs to a DataFrame
+        #     df_collateral = pd.DataFrame(collateral_values)
+
+        #     # Save the DataFrame to a CSV file
+        #     df_collateral.to_csv('collateral_values_log.csv', index=False)
+        #     print("Collateral values saved to 'collateral_values_log.csv'.")
+        # else:
+        #     print("No collateral values logged yet.")
+
         
         # for position in self.portfolio.positions:
         #     print(position)

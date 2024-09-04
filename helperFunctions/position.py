@@ -18,6 +18,7 @@ class Position:
     close_price: float = None
     close_time: str = None
     closed: bool = False
+    pnl: float = 0
     # transaction_cost_pct: float = 0.0003
     # leverage: float = 1
     # open_margin_amount: float = 0
