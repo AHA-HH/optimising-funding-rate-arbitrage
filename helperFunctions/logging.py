@@ -22,6 +22,7 @@ class Logger:
                 'open_time': position.open_time,
                 'quantity': position.quantity,
                 'open_price': position.open_price,
+                'transaction_cost_pct': position.transaction_cost_pct,
                 # 'open_transaction_cost': position.open_transaction_cost,
                 'close_time': None,  # To be updated later
                 # 'close_quantity': None,  # To be updated later

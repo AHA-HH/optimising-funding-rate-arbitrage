@@ -76,7 +76,7 @@ class Strategy:
             return False
         
         
-    def open_positions(self, entry_signal) -> None:
+    def open_positions(self, entry_signal, position_capital) -> None:
         """
         Open long and corresponding short position based on the entry signals.
         """
@@ -84,14 +84,12 @@ class Strategy:
         exchange = entry_signal['exchange']
         crypto = entry_signal['crypto']
         future_pair = entry_signal['pair']
-        # future_market = entry_signal['contract']
         future_price = entry_signal['open_price']
         
         spot_filter = self.df[(self.df['time'] == time) & (self.df['contract'] == 'spot') & (self.df['exchange'] == exchange) & (self.df['crypto'] == crypto)]
         spot_pair = spot_filter['pair'].values[0]
-        # spot_market = spot_filter['contract'].values[0]
+        spot_market = spot_filter['contract'].values[0]
         spot_price = spot_filter['open'].values[0]
-        # future_pair = entry_signal['pair']
         if future_pair == 'BTCUSDT' or future_pair == 'ETHUSDT':
             margin = 'usd'
         elif future_pair == 'BTCUSDCM' or future_pair == 'ETHUSDCM':
@@ -99,19 +97,20 @@ class Strategy:
         else:
             raise ValueError("Invalid future pair.")
         
-        # position_capital = self.portfolio.calculate_position_size()
-        position_capital = self.capital
-        
         # Create a new long position
         new_long_position = Position(
             position_type='long',
+            position_size=position_capital,
             exchange=exchange,
             crypto=crypto,
             pair=spot_pair,
             margin=margin,
             open_time=time,
+            open_price=spot_price,
+            # open_transaction_cost=transaction_cost_pct * spot_price,
             quantity=position_capital / spot_price,
-            open_price=spot_price
+            transaction_cost_pct=self.portfolio.get_exchange_transaction_fee_pct(exchange, spot_market, margin)
+            
         )
         
         collateral = new_long_position.quantity * new_long_position.open_price
@@ -121,13 +120,16 @@ class Strategy:
         # Create a new short position
         new_short_position = Position(
             position_type='short',
+            position_size=collateral,
             exchange=exchange,
             crypto=crypto,
             pair=future_pair,
             margin=margin,
             open_time=time,
             quantity=collateral / future_price,
-            open_price=future_price
+            open_price=future_price,
+            transaction_cost_pct=self.portfolio.get_exchange_transaction_fee_pct(exchange, 'futures', margin)
+            
         )
         
         self.portfolio.open_position(new_short_position)
@@ -203,9 +205,10 @@ class Strategy:
         timestamps = self.df['time'].unique()
         # # print(self.portfolio.initial_capital)
         
+        
         # loop through all timestamps
         # for current_time in timestamps:
-        for current_time in timestamps[0:1]:
+        for current_time in timestamps[0:10]:
             print(current_time)
             
             
@@ -224,18 +227,17 @@ class Strategy:
             # calculate notional value of portfolio and the max position size
             collateral_notional = self.portfolio.calculate_collateral_values(self.df, current_time)
             max_position_size = self.portfolio.calculate_max_portfolio_value_weightings(collateral_notional)
-            print(max_position_size['assets']['binance']['BTC']['max_value'])
             
             
             # look for positive funding rates and open positions that match the signal
-            for signal in self.generate_entry_signals(current_time):
+            entry_signals = self.generate_entry_signals(current_time)
+            for signal in entry_signals:
                 if self.check_entry_signal(signal) == True:
+                    long_position_size = self.portfolio.calculate_position_size(max_position_size, signal['exchange'], signal['crypto'], signal['pair'])
+                    self.open_positions(signal, long_position_size)
+
                     
-                    self.open_positions(signal)
-                    
-            # self.portfolio.calculate_collateral_values(self.df, current_time)
-                    
-        # print(self.portfolio.logger.get_logs(log_type='trades'))
+
                     
         print(f"Total number of trades executed: {self.portfolio.trade_count}")
         print(f"Total number of trades opened: {self.portfolio.trade_open_count}")

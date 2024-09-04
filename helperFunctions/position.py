@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class Position:
     position_type: str
-    # position_size: float # inital size before fees in usd
+    position_size: float # inital size before fees in usd
     exchange: str
     crypto: str
     pair: str
@@ -13,13 +13,14 @@ class Position:
     open_price: float
     # open_transaction_cost: float = 0
     # carryover_open_quantity: float
-    # close_transaction_cost: float = 0
     quantity: float # in coin
+    # close_transaction_cost: float = 0
+    transaction_cost_pct: float = 0.0001
     close_price: float = None
     close_time: str = None
     closed: bool = False
-    pnl: float = 0
-    # transaction_cost_pct: float = 0.0003
+    # pnl: float = 0
+    
     # leverage: float = 1
     # open_margin_amount: float = 0
     # rebalance_margin_pct: float = 0

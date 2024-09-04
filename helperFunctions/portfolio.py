@@ -21,25 +21,25 @@ class Portfolio:
         
         self.asset_weight_ranges = {
             'binance': {
-                'BTC': {'min': 0.0, 'max': 0.42}, # 70% of binance capital in BTC
-                'ETH': {'min': 0.0, 'max': 0.24}, # 40% of binance capital in ETH
+                'bitcoin': {'min': 0.0, 'max': 0.42}, # 70% of binance capital in BTC
+                'ethereum': {'min': 0.0, 'max': 0.24}, # 40% of binance capital in ETH
                 'liquid_cash': {'min': 0.0, 'max': 0.6} # 100% of binance capital in liquid cash
             },
             'okx': {
-                'BTC': {'min': 0.0, 'max': 0.32}, # 80% of okx capital in BTC
-                'ETH': {'min': 0.0, 'max': 0.3}, # 75% of okx capital in ETH
+                'bitcoin': {'min': 0.0, 'max': 0.32}, # 80% of okx capital in BTC
+                'ethereum': {'min': 0.0, 'max': 0.3}, # 75% of okx capital in ETH
                 'liquid_cash': {'min': 0.0, 'max': 0.4} # 100% of okx capital in liquid cash
             },
             'bybit': {
-                'BTC': {'min': 0.0, 'max': 0.18}, # 60% of bybit capital in BTC
-                'ETH': {'min': 0.0, 'max': 0.15}, # 50% of bybit capital in ETH
+                'bitcoin': {'min': 0.0, 'max': 0.18}, # 60% of bybit capital in BTC
+                'ethereum': {'min': 0.0, 'max': 0.15}, # 50% of bybit capital in ETH
                 'liquid_cash': {'min': 0.0, 'max': 0.3} # 100% of bybit capital in liquid cash
             }
         }
         
         self.crypto_weight_ranges = {
-            'BTC': {'min': 0.0, 'max': 0.60}, # 60% of total capital in BTC and 65% of potential max BTC allocation
-            'ETH': {'min': 0.0, 'max': 0.45}, # 45% of total capital in ETH and 65% of potential max ETH allocation
+            'bitcoin': {'min': 0.0, 'max': 0.60}, # 60% of total capital in BTC and 65% of potential max BTC allocation
+            'ethereum': {'min': 0.0, 'max': 0.45}, # 45% of total capital in ETH and 65% of potential max ETH allocation
             'liquid_cash': {'min': 0.0, 'max': 1.0}
         }
         
@@ -235,7 +235,7 @@ class Portfolio:
         return collateral_notional
     
     
-    def calculate_max_portfolio_value_weightings(self, value: float):
+    def calculate_max_portfolio_value_weightings(self, portfolio_value: float):
         """
         Calculate the ideal portfolio value weightings for unallocated capital, exchanges, and assets
         based on the current portfolio value.
@@ -253,35 +253,52 @@ class Portfolio:
             'assets': {}
         }
         
-        # Calculate ideal weight for unallocated capital
-        unallocated_min = self.unallocated_weight_range['min'] * value
-        unallocated_max = self.unallocated_weight_range['max'] * value
+        # Calculate max weight for unallocated capital
+        unallocated_min = self.unallocated_weight_range['min'] * portfolio_value
+        unallocated_max = self.unallocated_weight_range['max'] * portfolio_value
         weightings['unallocated'] = {'min_value': unallocated_min, 'max_value': unallocated_max}
         
-        # Calculate ideal weight for each exchange
+        # Calculate max weight for each exchange
         for exchange, ranges in self.exchange_weight_range.items():
-            min_value = ranges['min'] * value
-            max_value = ranges['max'] * value
+            min_value = ranges['min'] * portfolio_value
+            max_value = ranges['max'] * portfolio_value
             weightings['exchanges'][exchange] = {'min_value': min_value, 'max_value': max_value}
         
-        # Calculate ideal weight for each asset within each exchange
+        # Calculate max weight for each asset within each exchange
         for exchange, assets in self.asset_weight_ranges.items():
             weightings['assets'][exchange] = {}
             for asset, ranges in assets.items():
-                min_value = ranges['min'] * value
-                max_value = ranges['max'] * value
+                min_value = ranges['min'] * portfolio_value
+                max_value = ranges['max'] * portfolio_value
                 weightings['assets'][exchange][asset] = {'min_value': min_value, 'max_value': max_value}
         
         return weightings
 
 
-    def calculate_position_size(self):
+    def calculate_position_size(self, max_weightings: dict, exchange: str, crypto: str, pair: str):
         """
         Calculate the size of each position based on the current value of the portfolio.
         """
-
-        pass
+        position_size = 0
+        # usd margin positions half of the max position size
+        if pair == 'BTCUSDT' or pair == 'ETHUSDT':
+            position_size = max_weightings['assets'][exchange][crypto]['max_value'] / 2
+        # coin margin positions 5th of the max position size
+        elif pair == 'BTCUSDCM' or pair == 'ETHUSDCM':
+            position_size = max_weightings['assets'][exchange][crypto]['max_value'] / 5
+        
+        return position_size
     
+    
+    def get_exchange_transaction_fee_pct(self, exchange: str, trade: str, margin: str) -> float:
+        if exchange == "binance":
+            if trade == "spot":
+                return 0.001
+            elif trade == "futures":
+                if margin == "usd":
+                    return 0.0005
+                elif margin == "coin":
+                    return 0.0005
 
     
     def check_delta_neutral(self):
