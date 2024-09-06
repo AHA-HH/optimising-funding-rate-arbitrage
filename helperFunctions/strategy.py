@@ -75,7 +75,7 @@ class Strategy:
         else:
             return False
         
-        
+    
     def open_positions(self, entry_signal, position_capital) -> None:
         """
         Open long and corresponding short position based on the entry signals.
@@ -107,29 +107,22 @@ class Strategy:
             margin=margin,
             open_time=time,
             open_price=spot_price,
-            # open_transaction_cost=transaction_cost_pct * spot_price,
-            quantity=position_capital / spot_price,
             transaction_cost_pct=self.portfolio.get_exchange_transaction_fee_pct(exchange, spot_market, margin)
-            
         )
-        
-        collateral = new_long_position.quantity * new_long_position.open_price
         
         self.portfolio.open_position(new_long_position)
         
         # Create a new short position
         new_short_position = Position(
             position_type='short',
-            position_size=collateral,
+            position_size=new_long_position.open_value,
             exchange=exchange,
             crypto=crypto,
             pair=future_pair,
             margin=margin,
             open_time=time,
-            quantity=collateral / future_price,
             open_price=future_price,
             transaction_cost_pct=self.portfolio.get_exchange_transaction_fee_pct(exchange, 'futures', margin)
-            
         )
         
         self.portfolio.open_position(new_short_position)
@@ -207,8 +200,8 @@ class Strategy:
         
         
         # loop through all timestamps
-        # for current_time in timestamps:
-        for current_time in timestamps[0:10]:
+        for current_time in timestamps:
+        # for current_time in timestamps[0:4]:
             print(current_time)
             
             
@@ -235,6 +228,7 @@ class Strategy:
                 if self.check_entry_signal(signal) == True:
                     long_position_size = self.portfolio.calculate_position_size(max_position_size, signal['exchange'], signal['crypto'], signal['pair'])
                     self.open_positions(signal, long_position_size)
+                    
 
                     
 

@@ -4,37 +4,40 @@ from dataclasses import dataclass
 @dataclass
 class Position:
     position_type: str
-    position_size: float # inital size before fees in usd
+    position_size: float # initial size before fees in usd
     exchange: str
     crypto: str
     pair: str
     margin: str
     open_time: str
     open_price: float
-    # open_transaction_cost: float = 0
-    # carryover_open_quantity: float
-    quantity: float # in coin
-    # close_transaction_cost: float = 0
-    transaction_cost_pct: float = 0.0001
+    quantity: float = 0 # in coin
+    open_transaction_cost: float = 0
+    open_value: float = 0
+    close_transaction_cost: float = 0
+    transaction_cost_pct: float = 0.001
     close_price: float = None
     close_time: str = None
+    close_value: float = None
     closed: bool = False
-    # pnl: float = 0
+    pnl: float = 0
+    # carryover_open_quantity: float
     
-    # leverage: float = 1
-    # open_margin_amount: float = 0
-    # rebalance_margin_pct: float = 0
-    # rebalance_margin_amount: float = 0
-    # liquidation_margin_pct: float = 0
-    # liquidation_margin_amount: float = 0
-    # liquidation_cost_pct: float = 0.003
-    # liquidation_cost: float = 0
-    # transaction_cost: float = 0
-    # carryover_close_shares: float = 0
-    # gross_profit: float = 0
-    # net_profit: float = 0
+
     
-    # def __post_init__(self):
+    def __post_init__(self):
+        self.open_transaction_cost = self.position_size * self.transaction_cost_pct
+        self.open_value = self.position_size - self.open_transaction_cost
+        self.quantity = self.open_value / self.open_price
+        
+    # def close(self, close_time: str, close_price: float) -> None:
+    #     self.close_time = close_time
+    #     self.close_price = close_price
+    #     self.close_transaction_cost = self.quantity * self.transaction_cost_pct * self.close_price
+    #     self.close_value = (self.quantity * self.close_price) - self.close_transaction_cost
+    #     self.closed = True
+        # self.pnl = (self.close_price - self.open_price) * self.quantity - (self.open_transaction_cost + self.close_transaction_cost)
+        
     #     self.open_transaction_cost = ((self.quantity - self.carryover_open_quantity) * self.transaction_cost_pct * self.open_price)
     #     self.transaction_cost = self.open_transaction_cost
     #     self.open_value = self.quantity * self.open_price
@@ -78,3 +81,16 @@ class Position:
     #     self.net_profit = self.gross_profit - self.transaction_cost - self.liquidation_cost
 
     #     self.closed = True
+    
+    # leverage: float = 1
+    # open_margin_amount: float = 0
+    # rebalance_margin_pct: float = 0
+    # rebalance_margin_amount: float = 0
+    # liquidation_margin_pct: float = 0
+    # liquidation_margin_amount: float = 0
+    # liquidation_cost_pct: float = 0.003
+    # liquidation_cost: float = 0
+    # transaction_cost: float = 0
+    # carryover_close_shares: float = 0
+    # gross_profit: float = 0
+    # net_profit: float = 0

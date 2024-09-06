@@ -15,6 +15,7 @@ class Logger:
             # Create a new log entry for the opening of the trade
             self.logs['trades'].append({
                 'position_type': position.position_type,
+                'position_size': position.position_size,
                 'exchange': position.exchange,
                 'crypto': position.crypto,
                 'pair': position.pair,
@@ -23,7 +24,8 @@ class Logger:
                 'quantity': position.quantity,
                 'open_price': position.open_price,
                 'transaction_cost_pct': position.transaction_cost_pct,
-                # 'open_transaction_cost': position.open_transaction_cost,
+                'open_transaction_cost': position.open_transaction_cost,
+                'open_value': position.open_value,
                 'close_time': None,  # To be updated later
                 # 'close_quantity': None,  # To be updated later
                 'close_price': None,  # To be updated later
@@ -45,14 +47,17 @@ class Logger:
 
                     trade['close_time'] = position.close_time
                     trade['close_price'] = position.close_price
+                    trade['close_transaction_cost'] = position.close_transaction_cost
+                    trade['close_value'] = position.close_value
                     trade['closed'] = True
+                    trade['pnl'] = position.pnl
                     # trade['close_transaction_cost'] = position.close_transaction_cost
                     # Calculate PnL (example calculation, adjust as needed)
                     # trade['pnl'] = (position.close_price - position.open_price) * position.quantity - (position.open_transaction_cost + position.close_transaction_cost)
                     break
 
 
-    def log_funding_payment_and_pnl(self, time: str, position: Position, payment: float, pnl: float):
+    def log_funding_payment_and_pnl(self, time: str, position: Position, payment: float, pnl: float, initial_delta: float, current_delta: float):
         """
         Log the funding payment for a specific asset at a given time.
         """
@@ -61,7 +66,9 @@ class Logger:
             'exchange': position.exchange,
             'pair': position.pair,
             'funding payment': payment,
-            'pnl': pnl
+            'pnl': pnl,
+            'initial_delta': initial_delta,
+            'current_delta': current_delta
         })
         
         

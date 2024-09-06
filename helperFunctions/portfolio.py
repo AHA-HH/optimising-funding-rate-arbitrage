@@ -84,8 +84,15 @@ class Portfolio:
         Close an existing position.
         """
         position.close_price = close_price
+        position.close_transaction_cost = position.quantity * close_price * position.transaction_cost_pct
         position.close_time = close_time
+        position.close_value = (position.quantity * close_price) - position.close_transaction_cost
+        if position.position_type == 'long':
+            position.pnl = position.close_value - position.open_value
+        elif position.position_type == 'short':
+            position.pnl = position.open_value - position.close_value
         position.closed = True
+        # position.close(close_time, close_price)
         self.trade_count += 1
         self.trade_close_count += 1
         self.logger.log_trade(position, 'close')
@@ -153,6 +160,9 @@ class Portfolio:
             
             pnl_short = (short_position.open_price - short_current_price) * short_position.quantity
             
+            old_notional_short = short_position.quantity * short_position.open_price
+            new_notional_short = short_position.quantity * short_current_price
+            
             if short_position.margin == 'usd':
                 funding_payment = funding_rate * nominal_position_value
             elif short_position.margin == 'coin':
@@ -168,11 +178,17 @@ class Portfolio:
             long_current_price = matching_row_long['open'].values[0]
             pnl_long = (long_current_price - long_position.open_price) * long_position.quantity
             
+            old_notional_long = long_position.quantity * long_position.open_price
+            new_notional_long = long_position.quantity * long_current_price
+            
         pnl = pnl_long + pnl_short
         
-        self.logger.log_funding_payment_and_pnl(time, short_position, funding_payment, pnl)
+        old_delta = old_notional_long - old_notional_short
+        new_delta = new_notional_long - new_notional_short
         
-        return funding_payment, pnl
+        self.logger.log_funding_payment_and_pnl(time, short_position, funding_payment, pnl, old_delta, new_delta)
+        
+        return funding_payment, pnl, old_delta, new_delta
         
         
     def calculate_collateral_values(self, df: pd.DataFrame, time: str):
