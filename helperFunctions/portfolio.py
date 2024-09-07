@@ -14,41 +14,51 @@ class Portfolio:
         self.unallocated_weight_range = {'min': 0.1, 'max': 0.25}
     
         self.exchange_weight_range = {
-                    'binance': {'min': 0.0, 'max': 0.6},
-                    'okx': {'min': 0.0, 'max': 0.4},
-                    'bybit': {'min': 0.0, 'max': 0.3} 
+                    'binance': {'min': 0.0, 'max': 0.6}, # based on market share for exchanges
+                    'okx': {'min': 0.0, 'max': 0.2},
+                    'bybit': {'min': 0.0, 'max': 0.2} 
         }
         
         self.asset_weight_ranges = {
             'binance': {
                 'bitcoin': {'min': 0.0, 'max': 0.42}, # 70% of binance capital in BTC
                 'ethereum': {'min': 0.0, 'max': 0.24}, # 40% of binance capital in ETH
-                'liquid_cash': {'min': 0.0, 'max': 0.6} # 100% of binance capital in liquid cash
+                'liquid_cash': {'min': 0.1, 'max': 1.0} # 100% of binance capital in liquid cash
             },
             'okx': {
-                'bitcoin': {'min': 0.0, 'max': 0.32}, # 80% of okx capital in BTC
-                'ethereum': {'min': 0.0, 'max': 0.3}, # 75% of okx capital in ETH
-                'liquid_cash': {'min': 0.0, 'max': 0.4} # 100% of okx capital in liquid cash
+                'bitcoin': {'min': 0.0, 'max': 0.15}, # 75% of okx capital in BTC
+                'ethereum': {'min': 0.0, 'max': 0.15}, # 75% of okx capital in ETH
+                'liquid_cash': {'min': 0.1, 'max': 1.0} # 100% of okx capital in liquid cash
             },
             'bybit': {
-                'bitcoin': {'min': 0.0, 'max': 0.18}, # 60% of bybit capital in BTC
-                'ethereum': {'min': 0.0, 'max': 0.15}, # 50% of bybit capital in ETH
-                'liquid_cash': {'min': 0.0, 'max': 0.3} # 100% of bybit capital in liquid cash
+                'bitcoin': {'min': 0.0, 'max': 0.12}, # 60% of bybit capital in BTC
+                'ethereum': {'min': 0.0, 'max': 0.1}, # 50% of bybit capital in ETH
+                'liquid_cash': {'min': 0.1, 'max': 1.0} # 100% of bybit capital in liquid cash
             }
         }
         
         self.crypto_weight_ranges = {
             'bitcoin': {'min': 0.0, 'max': 0.60}, # 60% of total capital in BTC and 65% of potential max BTC allocation
             'ethereum': {'min': 0.0, 'max': 0.45}, # 45% of total capital in ETH and 65% of potential max ETH allocation
-            'liquid_cash': {'min': 0.0, 'max': 1.0}
+            'liquid_cash': {'min': 0.1, 'max': 1.0}
         }
         
         self.initial_capital = initial_capital
         
+        self.binance_liquid_cash = 0
+        
+        self.okx_liquid_cash = 0 
+        
+        self.bybit_liquid_cash = 0
+        
         self.binance_btc_collateral = 0
         self.binance_eth_collateral = 0
-        self.binance_usdt_collateral = 0
         
+        self.okx_btc_collateral = 0
+        self.okx_eth_collateral = 0
+        
+        self.bybit_btc_collateral = 0
+        self.bybit_eth_collateral = 0
         
         self.logger = Logger()
                 
@@ -160,7 +170,7 @@ class Portfolio:
             
             pnl_short = (short_position.open_price - short_current_price) * short_position.quantity
             
-            old_notional_short = short_position.quantity * short_position.open_price
+            # old_notional_short = short_position.quantity * short_position.open_price
             new_notional_short = short_position.quantity * short_current_price
             
             if short_position.margin == 'usd':
@@ -178,26 +188,44 @@ class Portfolio:
             long_current_price = matching_row_long['open'].values[0]
             pnl_long = (long_current_price - long_position.open_price) * long_position.quantity
             
-            old_notional_long = long_position.quantity * long_position.open_price
+            # old_notional_long = long_position.quantity * long_position.open_price
             new_notional_long = long_position.quantity * long_current_price
             
         pnl = pnl_long + pnl_short
         
-        old_delta = old_notional_long - old_notional_short
+        old_delta = long_position.open_value - short_position.open_value
         new_delta = new_notional_long - new_notional_short
         
         self.logger.log_funding_payment_and_pnl(time, short_position, funding_payment, pnl, old_delta, new_delta)
         
         return funding_payment, pnl, old_delta, new_delta
+    
+    
+    def assign_initial_capital_to_exchanges(self):
+        """
+        Assign capital to a specific exchange.
+        """
+        self.binance_liquid_cash = 0.6 * self.initial_capital
+
+        self.okx_liquid_cash = 0.2 * self.initial_capital
+
+        self.bybit_liquid_cash = 0.2 * self.initial_capital
         
+        if self.binance_liquid_cash + self.okx_liquid_cash + self.bybit_liquid_cash != self.initial_capital:
+            raise Exception("Initial capital allocation to exchanges is incorrect")
         
+        return self.binance_liquid_cash, self.okx_liquid_cash, self.bybit_liquid_cash
+    
+    
     def calculate_collateral_values(self, df: pd.DataFrame, time: str):
         """
         Calculate the current collateral values of the portfolio.
-        """
-        # self.binance_btc_collateral = 0
-        # self.binance_eth_collateral = 0
-        # self.binance_usdt_collateral = 0
+        """        
+        print(self.binance_liquid_cash, self.binance_btc_collateral)
+        
+
+        
+        
         
         # new_open_positions = [pos for pos in self.positions if not pos.closed and pos.open_time == time and pos.position_type == 'long']
         # for position in new_open_positions:

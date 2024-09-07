@@ -97,36 +97,63 @@ class Strategy:
         else:
             raise ValueError("Invalid future pair.")
         
-        # Create a new long position
-        new_long_position = Position(
-            position_type='long',
-            position_size=position_capital,
-            exchange=exchange,
-            crypto=crypto,
-            pair=spot_pair,
-            margin=margin,
-            open_time=time,
-            open_price=spot_price,
-            transaction_cost_pct=self.portfolio.get_exchange_transaction_fee_pct(exchange, spot_market, margin)
-        )
+        # Check if long position already exists to avoid opening it again and avoid repeating capital allocation issues
+        long_position_exists = self.portfolio.find_open_position(crypto, spot_pair, exchange, 'long', margin)
         
-        self.portfolio.open_position(new_long_position)
-        
-        # Create a new short position
-        new_short_position = Position(
-            position_type='short',
-            position_size=new_long_position.open_value,
-            exchange=exchange,
-            crypto=crypto,
-            pair=future_pair,
-            margin=margin,
-            open_time=time,
-            open_price=future_price,
-            transaction_cost_pct=self.portfolio.get_exchange_transaction_fee_pct(exchange, 'futures', margin)
-        )
-        
-        self.portfolio.open_position(new_short_position)
-        
+        if not long_position_exists:
+            # Create a new long position
+            new_long_position = Position(
+                position_type='long',
+                position_size=position_capital,
+                exchange=exchange,
+                crypto=crypto,
+                pair=spot_pair,
+                margin=margin,
+                open_time=time,
+                open_price=spot_price,
+                transaction_cost_pct=self.portfolio.get_exchange_transaction_fee_pct(exchange, spot_market, margin)
+            )
+            
+            self.portfolio.open_position(new_long_position)
+
+            capital_used = new_long_position.position_size
+            
+            if exchange == 'binance':
+                self.portfolio.binance_liquid_cash -= capital_used
+                if crypto == 'bitcoin':
+                    self.portfolio.binance_btc_collateral += capital_used
+                elif crypto == 'ethereum':
+                    self.portfolio.binance_eth_collateral += capital_used
+
+            elif exchange == 'okx':
+                self.portfolio.okx_liquid_cash -= capital_used
+                if crypto == 'bitcoin':
+                    self.portfolio.okx_btc_collateral += capital_used
+                elif crypto == 'ethereum':
+                    self.portfolio.okx_eth_collateral += capital_used
+
+            elif exchange == 'bybit':
+                self.portfolio.bybit_liquid_cash -= capital_used
+                if crypto == 'bitcoin':
+                    self.portfolio.bybit_btc_collateral += capital_used
+                elif crypto == 'ethereum':
+                    self.portfolio.bybit_eth_collateral += capital_used
+            
+            # Create a new short position
+            new_short_position = Position(
+                position_type='short',
+                position_size=new_long_position.open_value,
+                exchange=exchange,
+                crypto=crypto,
+                pair=future_pair,
+                margin=margin,
+                open_time=time,
+                open_price=future_price,
+                transaction_cost_pct=self.portfolio.get_exchange_transaction_fee_pct(exchange, 'futures', margin)
+            )
+            
+            self.portfolio.open_position(new_short_position)
+            
     
     def generate_exit_signals(self, current_time) -> None:
         """
@@ -177,18 +204,22 @@ class Strategy:
         
         if close_short_position is not None:
             self.portfolio.close_position(close_short_position, close_price, time)
-            
+            pnl_short = close_short_position.pnl
             
         spot_filter = self.df[(self.df['time'] == time) & (self.df['contract'] == 'spot') & (self.df['exchange'] == exchange) & (self.df['crypto'] == crypto)]
         spot_pair = spot_filter['pair'].values[0]
         spot_market = spot_filter['contract'].values[0]
         spot_price = spot_filter['open'].values[0]
         
-        
         close_long_position = self.portfolio.find_open_position(crypto, spot_pair, exchange, 'long', margin)
         
         if close_long_position is not None:
             self.portfolio.close_position(close_long_position, spot_price, time)
+            pnl_long = close_long_position.pnl
+            
+        # if pnl_long is not None and pnl_short is not None:          
+        #     net_pnl = pnl_long + pnl_short
+        #     print(f"Net PnL: {net_pnl}")
 
         
     def run(self):
@@ -196,12 +227,15 @@ class Strategy:
         Run the backtest.
         """
         timestamps = self.df['time'].unique()
-        # # print(self.portfolio.initial_capital)
+        
+        # check initial capital and assign to exchanges
+        print(self.portfolio.initial_capital)
+        self.portfolio.assign_initial_capital_to_exchanges()
         
         
         # loop through all timestamps
-        for current_time in timestamps:
-        # for current_time in timestamps[0:4]:
+        # for current_time in timestamps:
+        for current_time in timestamps[0:10]:
             print(current_time)
             
             
@@ -213,7 +247,8 @@ class Strategy:
                 
             # look for negative funding rates and close positions that match the signal
             for signal in self.generate_exit_signals(current_time):
-                # if signal is in self.portfolio.get_open_short_positions(): then close positions, should come before entry signals
+                
+                # if signal is is in self.portfolio.get_open_short_positions(): # then close positions, should come before entry signals
                     self.close_positions(signal)
                 
                 
