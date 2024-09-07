@@ -72,16 +72,21 @@ class Logger:
         })
         
         
-    def log_collateral(self, time: str, binance_btc_collateral: float, binance_eth_collateral: float, binance_usdt_collateral: float, unallocated_collateral: float):
+    def log_collateral(self, time: str, bin_btc: float, bin_eth: float, bin_liq: float, okx_btc: float, okx_eth: float, okx_liq: float, bybit_btc: float, bybit_eth: float, bybit_liq: float):
         """
         Log the collateral values at a given time.
         """
         self.logs['collateral_values'].append({
             'time': time,
-            'btc_collateral': binance_btc_collateral,
-            'eth_collateral': binance_eth_collateral,
-            'liquid_collateral': binance_usdt_collateral,
-            'unallocated_collateral': unallocated_collateral
+            'binance_btc_collateral': bin_btc,
+            'binance_eth_collateral': bin_eth,
+            'binance_liquid_cash': bin_liq,            
+            'okx_btc_collateral': okx_btc,
+            'okx_eth_collateral': okx_eth,
+            'okx_liquid_cash': okx_liq,            
+            'bybit_btc_collateral': bybit_btc,
+            'bybit_eth_collateral': bybit_eth,
+            'bybit_liquid_cash': bybit_liq,
         })
         
 

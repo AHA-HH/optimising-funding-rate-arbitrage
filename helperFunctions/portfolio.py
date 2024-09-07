@@ -217,66 +217,20 @@ class Portfolio:
         return self.binance_liquid_cash, self.okx_liquid_cash, self.bybit_liquid_cash
     
     
-    def calculate_collateral_values(self, df: pd.DataFrame, time: str):
+    def calculate_collateral_values(self, time: str):
         """
         Calculate the current collateral values of the portfolio.
-        """        
+        """
+        self.logger.log_collateral(time, self.binance_btc_collateral, self.binance_eth_collateral, self.binance_liquid_cash, self.okx_btc_collateral, self.okx_eth_collateral, self.okx_liquid_cash, self.bybit_btc_collateral, self.bybit_eth_collateral, self.bybit_liquid_cash)
         print(self.binance_liquid_cash, self.binance_btc_collateral)
-        
 
-        
-        
-        
-        # new_open_positions = [pos for pos in self.positions if not pos.closed and pos.open_time == time and pos.position_type == 'long']
-        # for position in new_open_positions:
-        #     position_value = position.quantity * position.open_price
-        #     if position.crypto == 'bitcoin':
-        #         if position.exchange == 'binance':
-        #             self.unallocated_collateral -= position_value
-        #             self.binance_btc_collateral += position_value
-        #     elif position.crypto == 'ethereum':
-        #         if position.exchange == 'binance':
-        #             self.unallocated_collateral -= position_value
-        #             self.binance_eth_collateral += position_value
-        
-        # open_positions = [pos for pos in self.positions if not pos.closed and not pos.open_time == time and pos.position_type == 'long']
-        # for position in open_positions:
-        #     matching_row = df[
-        #         (df['time'] == time) & 
-        #         (df['exchange'] == position.exchange) & 
-        #         (df['pair'] == position.pair)
-        #     ]
-            
-        #     if not matching_row.empty:
-        #         current_price = matching_row['open'].values[0]
-        #         position_value = position.quantity * current_price
-        #         if position.crypto == 'bitcoin':
-        #             if position.exchange == 'binance':
-        #                 self.binance_btc_collateral += position_value
-        #         elif position.crypto == 'ethereum':
-        #             if position.exchange == 'binance':
-        #                 self.binance_eth_collateral += position_value
-                
-        # closed_positions = [pos for pos in self.positions if pos.closed and pos.close_time == time and pos.position_type == 'long']
-        # for position in closed_positions:
-        #     position_value = position.quantity * position.close_price
-        #     if position.crypto == 'bitcoin':
-        #         if position.exchange == 'binance':
-        #             # self.binance_btc_collateral -= position_value
-        #             # self.binance_usdt_collateral += position_value
-        #             self.unallocated_collateral += position_value
-        #     elif position.crypto == 'ethereum':
-        #         if position.exchange == 'binance':
-        #             # self.binance_eth_collateral -= position_value
-        #             # self.binance_usdt_collateral += position_value
-        #             self.unallocated_collateral += position_value
-        
-        # self.logger.log_collateral(time, self.binance_btc_collateral, self.binance_eth_collateral, self.binance_usdt_collateral, self.unallocated_collateral)
-        
-        # return self.binance_btc_collateral, self.binance_eth_collateral, self.binance_usdt_collateral, self.unallocated_collateral
-        unallocated_capital = self.initial_capital
-        collateral_notional = unallocated_capital
-        return collateral_notional
+
+    def calculate_portfolio_notional_value(self):
+        self.binance_notional = self.binance_liquid_cash + self.binance_btc_collateral + self.binance_eth_collateral
+        self.okx_notional = self.okx_liquid_cash + self.okx_btc_collateral + self.okx_eth_collateral
+        self.bybit_notional = self.bybit_liquid_cash + self.bybit_btc_collateral + self.bybit_eth_collateral
+        self.portfolio_notional = self.binance_notional + self.okx_notional + self.bybit_notional
+        return self.portfolio_notional
     
     
     def calculate_max_portfolio_value_weightings(self, portfolio_value: float):

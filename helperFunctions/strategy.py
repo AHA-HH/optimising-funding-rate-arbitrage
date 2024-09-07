@@ -193,6 +193,9 @@ class Strategy:
         close_price = exit_signal['open_price']
         future_pair = exit_signal['pair']
         
+        pnl_short = None
+        pnl_long = None
+        
         if future_pair == 'BTCUSDT' or future_pair == 'ETHUSDT':
             margin = 'usd'
         elif future_pair == 'BTCUSDCM' or future_pair == 'ETHUSDCM':
@@ -216,10 +219,31 @@ class Strategy:
         if close_long_position is not None:
             self.portfolio.close_position(close_long_position, spot_price, time)
             pnl_long = close_long_position.pnl
+            capital_used = close_long_position.position_size
             
-        # if pnl_long is not None and pnl_short is not None:          
-        #     net_pnl = pnl_long + pnl_short
-        #     print(f"Net PnL: {net_pnl}")
+        if pnl_long is not None and pnl_short is not None:          
+            net_pnl = pnl_long + pnl_short
+            
+            if exchange == 'binance':
+                self.portfolio.binance_liquid_cash += capital_used + net_pnl
+                if crypto == 'bitcoin':
+                    self.portfolio.binance_btc_collateral -= capital_used
+                elif crypto == 'ethereum':
+                    self.portfolio.binance_eth_collateral -= capital_used
+
+            elif exchange == 'okx':
+                self.portfolio.okx_liquid_cash += capital_used + net_pnl
+                if crypto == 'bitcoin':
+                    self.portfolio.okx_btc_collateral -= capital_used
+                elif crypto == 'ethereum':
+                    self.portfolio.okx_eth_collateral -= capital_used
+
+            elif exchange == 'bybit':
+                self.portfolio.bybit_liquid_cash += capital_used + net_pnl
+                if crypto == 'bitcoin':
+                    self.portfolio.bybit_btc_collateral -= capital_used
+                elif crypto == 'ethereum':
+                    self.portfolio.bybit_eth_collateral -= capital_used
 
         
     def run(self):
@@ -234,8 +258,8 @@ class Strategy:
         
         
         # loop through all timestamps
-        # for current_time in timestamps:
-        for current_time in timestamps[0:10]:
+        for current_time in timestamps:
+        # for current_time in timestamps[0:10]:
             print(current_time)
             
             
@@ -253,7 +277,7 @@ class Strategy:
                 
                 
             # calculate notional value of portfolio and the max position size
-            collateral_notional = self.portfolio.calculate_collateral_values(self.df, current_time)
+            collateral_notional = self.portfolio.calculate_portfolio_notional_value()
             max_position_size = self.portfolio.calculate_max_portfolio_value_weightings(collateral_notional)
             
             
@@ -263,7 +287,8 @@ class Strategy:
                 if self.check_entry_signal(signal) == True:
                     long_position_size = self.portfolio.calculate_position_size(max_position_size, signal['exchange'], signal['crypto'], signal['pair'])
                     self.open_positions(signal, long_position_size)
-                    
+            
+            self.portfolio.calculate_collateral_values(current_time)
 
                     
 
@@ -278,7 +303,6 @@ class Strategy:
             trades_df = pd.DataFrame(trades_log)
             trades_df.to_csv('./data/raw/trades_log.csv', index=False)
             print("Trades saved to 'trades_log.csv'.")
-        
         
         funding_payments_log = self.portfolio.logger.get_logs(log_type='funding_payments')
 
@@ -296,19 +320,18 @@ class Strategy:
         else:
             print("No funding payments logged.")
         
-        # print(self.portfolio.logger.get_logs(log_type='collateral_values'))
-        # collateral_values = self.portfolio.logger.get_logs(log_type='collateral_values')
+        collateral_values_log = self.portfolio.logger.get_logs(log_type='collateral_values')
 
-        # # Check if there are any logs to save
-        # if collateral_values:
-        #     # Convert the list of logs to a DataFrame
-        #     df_collateral = pd.DataFrame(collateral_values)
+        # Check if there are any logs to save
+        if collateral_values_log:
+            # Convert the list of logs to a DataFrame
+            df_collateral = pd.DataFrame(collateral_values_log)
 
-        #     # Save the DataFrame to a CSV file
-        #     df_collateral.to_csv('collateral_values_log.csv', index=False)
-        #     print("Collateral values saved to 'collateral_values_log.csv'.")
-        # else:
-        #     print("No collateral values logged yet.")
+            # Save the DataFrame to a CSV file
+            df_collateral.to_csv('./data/raw/collateral_values_log.csv', index=False)
+            print("Collateral values saved to 'collateral_values_log.csv'.")
+        else:
+            print("No collateral values logged yet.")
 
         
         # for position in self.portfolio.positions:
