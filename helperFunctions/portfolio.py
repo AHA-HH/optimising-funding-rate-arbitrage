@@ -186,7 +186,7 @@ class Portfolio:
         new_delta = new_notional_long - new_notional_short
         
         self.logger.log_funding_payment_and_pnl(time, short_position, funding_payment, pnl, old_delta, new_delta)
-        
+        # self.binance_liquid_cash += funding_payment
         return funding_payment, pnl, old_delta, new_delta
     
     

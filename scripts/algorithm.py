@@ -1,5 +1,3 @@
-
-
 # SYMBOLS = [] # List of symbols to be used in the strategy
 # EXCHANGES = [binance, bitget, bybit, okx] # List of exchanges to be used in the strategy
 
@@ -39,5 +37,3 @@
 # ETH/USDT          ETHUSD Spot
 # ETH/USDT:USDT     ETH USD Margin
 # ETH/USD:ETH       ETH Coin Margin
-
-df = pd.read_csv('./data/processed/binance.csv')
