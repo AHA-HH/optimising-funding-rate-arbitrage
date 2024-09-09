@@ -11,36 +11,26 @@ class Portfolio:
         self.trade_close_count = 0  # Number of closed trades
         
         # Set weight ranges for portfolio allocation
-        self.unallocated_weight_range = {'min': 0.1, 'max': 0.25}
-    
-        self.exchange_weight_range = {
-                    'binance': {'min': 0.0, 'max': 0.6}, # based on market share for exchanges
-                    'okx': {'min': 0.0, 'max': 0.2},
-                    'bybit': {'min': 0.0, 'max': 0.2} 
-        }
+        self.unallocated_weight_range = {'min': 0.1, 'max': 0.2} # 10-20% of each exchanged unallocated for flexibility and risk management
         
         self.asset_weight_ranges = {
             'binance': {
-                'bitcoin': {'min': 0.0, 'max': 0.42}, # 70% of binance capital in BTC
-                'ethereum': {'min': 0.0, 'max': 0.24}, # 40% of binance capital in ETH
-                'liquid_cash': {'min': 0.1, 'max': 1.0} # 100% of binance capital in liquid cash
+                'bitcoin': {'min': 0.1, 'max': 0.6},
+                'ethereum': {'min': 0.05, 'max': 0.3}
             },
             'okx': {
-                'bitcoin': {'min': 0.0, 'max': 0.15}, # 75% of okx capital in BTC
-                'ethereum': {'min': 0.0, 'max': 0.15}, # 75% of okx capital in ETH
-                'liquid_cash': {'min': 0.1, 'max': 1.0} # 100% of okx capital in liquid cash
+                'bitcoin': {'min': 0.1, 'max': 0.65},
+                'ethereum': {'min': 0.1, 'max': 0.65}
             },
             'bybit': {
-                'bitcoin': {'min': 0.0, 'max': 0.12}, # 60% of bybit capital in BTC
-                'ethereum': {'min': 0.0, 'max': 0.1}, # 50% of bybit capital in ETH
-                'liquid_cash': {'min': 0.1, 'max': 1.0} # 100% of bybit capital in liquid cash
+                'bitcoin': {'min': 0.1, 'max': 0.55},
+                'ethereum': {'min': 0.05, 'max': 0.35}
             }
         }
         
         self.crypto_weight_ranges = {
-            'bitcoin': {'min': 0.0, 'max': 0.60}, # 60% of total capital in BTC and 65% of potential max BTC allocation
-            'ethereum': {'min': 0.0, 'max': 0.45}, # 45% of total capital in ETH and 65% of potential max ETH allocation
-            'liquid_cash': {'min': 0.1, 'max': 1.0}
+            'bitcoin': {'min': 0.0, 'max': 0.60},
+            'ethereum': {'min': 0.0, 'max': 0.45}
         }
         
         self.initial_capital = initial_capital
@@ -102,7 +92,6 @@ class Portfolio:
         elif position.position_type == 'short':
             position.pnl = position.open_value - position.close_value
         position.closed = True
-        # position.close(close_time, close_price)
         self.trade_count += 1
         self.trade_close_count += 1
         self.logger.log_trade(position, 'close')
@@ -170,13 +159,14 @@ class Portfolio:
             
             pnl_short = (short_position.open_price - short_current_price) * short_position.quantity
             
-            # old_notional_short = short_position.quantity * short_position.open_price
             new_notional_short = short_position.quantity * short_current_price
             
             if short_position.margin == 'usd':
                 funding_payment = funding_rate * nominal_position_value
             elif short_position.margin == 'coin':
-                funding_payment = funding_rate * short_position.quantity
+                # funding_payment = funding_rate * short_position.quantity
+                funding_payment_coin = funding_rate * short_position.quantity
+                funding_payment = funding_payment_coin * short_current_price
             
         matching_row_long = df[
             (df['time'] == time) & 
@@ -188,7 +178,6 @@ class Portfolio:
             long_current_price = matching_row_long['open'].values[0]
             pnl_long = (long_current_price - long_position.open_price) * long_position.quantity
             
-            # old_notional_long = long_position.quantity * long_position.open_price
             new_notional_long = long_position.quantity * long_current_price
             
         pnl = pnl_long + pnl_short
@@ -221,8 +210,30 @@ class Portfolio:
         """
         Calculate the current collateral values of the portfolio.
         """
-        self.logger.log_collateral(time, self.binance_btc_collateral, self.binance_eth_collateral, self.binance_liquid_cash, self.okx_btc_collateral, self.okx_eth_collateral, self.okx_liquid_cash, self.bybit_btc_collateral, self.bybit_eth_collateral, self.bybit_liquid_cash)
-        print(self.binance_liquid_cash, self.binance_btc_collateral)
+        # Use local variables to avoid changing the instance variables
+        bin_liquid = 0 if self.binance_liquid_cash < 1 else self.binance_liquid_cash
+        bin_btc = 0 if self.binance_btc_collateral < 1 else self.binance_btc_collateral
+        bin_eth = 0 if self.binance_eth_collateral < 1 else self.binance_eth_collateral
+
+        okx_liquid = 0 if self.okx_liquid_cash < 1 else self.okx_liquid_cash
+        okx_btc = 0 if self.okx_btc_collateral < 1 else self.okx_btc_collateral
+        okx_eth = 0 if self.okx_eth_collateral < 1 else self.okx_eth_collateral
+
+        byb_liquid = 0 if self.bybit_liquid_cash < 1 else self.bybit_liquid_cash
+        byb_btc = 0 if self.bybit_btc_collateral < 1 else self.bybit_btc_collateral
+        byb_eth = 0 if self.bybit_eth_collateral < 1 else self.bybit_eth_collateral
+        
+        self.logger.log_collateral(
+            time, 
+            bin_btc, 
+            bin_eth, 
+            bin_liquid, 
+            okx_btc, 
+            okx_eth, 
+            okx_liquid, 
+            byb_btc, 
+            byb_eth, 
+            byb_liquid)
 
 
     def calculate_portfolio_notional_value(self):
@@ -231,60 +242,95 @@ class Portfolio:
         self.bybit_notional = self.bybit_liquid_cash + self.bybit_btc_collateral + self.bybit_eth_collateral
         self.portfolio_notional = self.binance_notional + self.okx_notional + self.bybit_notional
         return self.portfolio_notional
-    
-    
-    def calculate_max_portfolio_value_weightings(self, portfolio_value: float):
-        """
-        Calculate the ideal portfolio value weightings for unallocated capital, exchanges, and assets
-        based on the current portfolio value.
-        
-        Parameters:
-        value (float): The total value of the portfolio.
-        
-        Returns:
-        dict: A dictionary containing the ideal weightings for unallocated capital, each exchange, and each asset.
-        """
-        
-        weightings = {
-            'unallocated': {},
-            'exchanges': {},
-            'assets': {}
-        }
-        
-        # Calculate max weight for unallocated capital
-        unallocated_min = self.unallocated_weight_range['min'] * portfolio_value
-        unallocated_max = self.unallocated_weight_range['max'] * portfolio_value
-        weightings['unallocated'] = {'min_value': unallocated_min, 'max_value': unallocated_max}
-        
-        # Calculate max weight for each exchange
-        for exchange, ranges in self.exchange_weight_range.items():
-            min_value = ranges['min'] * portfolio_value
-            max_value = ranges['max'] * portfolio_value
-            weightings['exchanges'][exchange] = {'min_value': min_value, 'max_value': max_value}
-        
-        # Calculate max weight for each asset within each exchange
-        for exchange, assets in self.asset_weight_ranges.items():
-            weightings['assets'][exchange] = {}
-            for asset, ranges in assets.items():
-                min_value = ranges['min'] * portfolio_value
-                max_value = ranges['max'] * portfolio_value
-                weightings['assets'][exchange][asset] = {'min_value': min_value, 'max_value': max_value}
-        
-        return weightings
 
 
-    def calculate_position_size(self, max_weightings: dict, exchange: str, crypto: str, pair: str):
+    def calculate_position_size(self, exchange: str, crypto: str, pair: str):
         """
         Calculate the size of each position based on the current value of the portfolio.
         """
+            
+        # Calculate the total collateral for each exchange
+        exchange_collaterals = {
+            'binance': self.binance_liquid_cash + self.binance_btc_collateral + self.binance_eth_collateral,
+            'okx': self.okx_liquid_cash + self.okx_btc_collateral + self.okx_eth_collateral,
+            'bybit': self.bybit_liquid_cash + self.bybit_btc_collateral + self.bybit_eth_collateral
+        }
+
+        # Get the collateral for the specific exchange
+        collateral = exchange_collaterals[exchange]
+        
+        # Get the liquid cash available for the specific exchange
+        total_liquid_cash = 0
+        if exchange == 'binance':
+            total_liquid_cash = self.binance_liquid_cash
+        elif exchange == 'okx':
+            total_liquid_cash = self.okx_liquid_cash
+        elif exchange == 'bybit':
+            total_liquid_cash = self.bybit_liquid_cash
+            
+        # Get the collateral already used in the specific asset    
+        collateral_in_asset = 0
+        if exchange == 'binance':
+            if crypto == 'bitcoin':
+                collateral_in_asset = self.binance_btc_collateral
+            elif crypto == 'ethereum':
+                collateral_in_asset = self.binance_eth_collateral
+        elif exchange == 'okx':
+            if crypto == 'bitcoin':
+                collateral_in_asset = self.okx_btc_collateral
+            elif crypto == 'ethereum':
+                collateral_in_asset = self.okx_eth_collateral
+        elif exchange == 'bybit':
+            if crypto == 'bitcoin':
+                collateral_in_asset = self.bybit_btc_collateral
+            elif crypto == 'ethereum':
+                collateral_in_asset = self.bybit_eth_collateral
+
+        # Calculate liquid cash ranges based on notional value of exchange
+        liquid_cash_min = self.unallocated_weight_range['min'] * collateral
+        liquid_cash_max = self.unallocated_weight_range['max'] * collateral
+        
+        liquid_cash_available_safe = total_liquid_cash - liquid_cash_max
+        liquid_cash_available_risky = total_liquid_cash - liquid_cash_min
+        
+        # Calculate the max value for the crypto asset based on its weighting range
+        asset_max_value = self.asset_weight_ranges[exchange][crypto]['max'] * collateral
+        asset_min_value = self.asset_weight_ranges[exchange][crypto]['min'] * collateral
+        
         position_size = 0
-        # usd margin positions half of the max position size
+        # usd margin positions max position size
         if pair == 'BTCUSDT' or pair == 'ETHUSDT':
-            position_size = max_weightings['assets'][exchange][crypto]['max_value'] / 2
+            max_position_size = asset_max_value
         # coin margin positions 5th of the max position size
         elif pair == 'BTCUSDCM' or pair == 'ETHUSDCM':
-            position_size = max_weightings['assets'][exchange][crypto]['max_value'] / 5
-        
+            max_position_size = asset_max_value / 4
+            
+        # Check if the new position would exceed the safe limit
+        if max_position_size <= liquid_cash_available_safe:
+            # Now check if the new position would exceed the allowed asset allocation
+            if collateral_in_asset + max_position_size <= asset_max_value:
+                position_size = max_position_size
+            else:
+                # Adjust position size if it exceeds asset max value
+                adjusted_position_size = asset_max_value - collateral_in_asset
+                if adjusted_position_size >= asset_min_value:
+                    position_size = adjusted_position_size
+        # If we cannot meet the safe limit, check if we can use the risky limit
+        elif liquid_cash_available_safe < max_position_size <= liquid_cash_available_risky:
+            if collateral_in_asset + max_position_size <= asset_max_value:
+                position_size = max_position_size
+            else:
+                adjusted_position_size = asset_max_value - collateral_in_asset
+                if adjusted_position_size >= asset_min_value:
+                    position_size = adjusted_position_size
+        elif max_position_size > liquid_cash_available_risky:
+            if collateral_in_asset + liquid_cash_available_risky <= asset_max_value:
+                position_size = liquid_cash_available_risky
+            else:
+                adjusted_position_size = asset_max_value - collateral_in_asset
+                if adjusted_position_size >= asset_min_value:
+                    position_size = adjusted_position_size
+
         return position_size
     
     

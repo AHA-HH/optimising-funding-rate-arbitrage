@@ -54,26 +54,6 @@ class Strategy:
                 }
                 entry_signals.append(entry_signal)
         return entry_signals
-    
-    
-    def check_entry_signal(self, entry_signal) -> bool:
-        """
-        Generate entry signal based on the funding rate.
-        """
-        exchange = entry_signal['exchange']
-        crypto = entry_signal['crypto']
-        pair = entry_signal['pair']
-        contract = entry_signal['contract']
-        open_price = entry_signal['open_price']
-        close_price = entry_signal['close_price']
-        funding_rate = entry_signal['funding_rate']
-        time = entry_signal['time']
-        
-        # if logic to determine whether a position is already open etc etc to see if signal should be acted upon
-        if exchange == 'binance':
-            return True
-        else:
-            return False
         
     
     def open_positions(self, entry_signal, position_capital) -> None:
@@ -256,12 +236,10 @@ class Strategy:
         print(self.portfolio.initial_capital)
         self.portfolio.assign_initial_capital_to_exchanges()
         
-        
         # loop through all timestamps
         for current_time in timestamps:
         # for current_time in timestamps[0:10]:
-            print(current_time)
-            
+            # print(current_time)
             
             # look for open short positions and calculate funding rate payments
             for short_position in self.portfolio.get_open_short_positions():
@@ -271,28 +249,23 @@ class Strategy:
                 
             # look for negative funding rates and close positions that match the signal
             for signal in self.generate_exit_signals(current_time):
-                
                 # if signal is is in self.portfolio.get_open_short_positions(): # then close positions, should come before entry signals
                     self.close_positions(signal)
                 
-                
-            # calculate notional value of portfolio and the max position size
-            collateral_notional = self.portfolio.calculate_portfolio_notional_value()
-            max_position_size = self.portfolio.calculate_max_portfolio_value_weightings(collateral_notional)
-            
             
             # look for positive funding rates and open positions that match the signal
             entry_signals = self.generate_entry_signals(current_time)
+            # print(entry_signals)
             for signal in entry_signals:
-                if self.check_entry_signal(signal) == True:
-                    long_position_size = self.portfolio.calculate_position_size(max_position_size, signal['exchange'], signal['crypto'], signal['pair'])
+                long_position_size = self.portfolio.calculate_position_size(signal['exchange'], signal['crypto'], signal['pair'])
+                if long_position_size != 0:
                     self.open_positions(signal, long_position_size)
+            
             
             self.portfolio.calculate_collateral_values(current_time)
 
-                    
-
-                    
+        print(self.portfolio.calculate_portfolio_notional_value())
+        
         print(f"Total number of trades executed: {self.portfolio.trade_count}")
         print(f"Total number of trades opened: {self.portfolio.trade_open_count}")
         print(f"Total number of trades closed: {self.portfolio.trade_close_count}")
@@ -332,9 +305,5 @@ class Strategy:
             print("Collateral values saved to 'collateral_values_log.csv'.")
         else:
             print("No collateral values logged yet.")
-
-        
-        # for position in self.portfolio.positions:
-        #     print(position)
                 
         print("Backtest completed.")
