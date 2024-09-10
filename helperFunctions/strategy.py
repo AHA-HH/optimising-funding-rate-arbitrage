@@ -274,7 +274,7 @@ class Strategy:
         
         if trades_log:
             trades_df = pd.DataFrame(trades_log)
-            trades_df.to_csv('./data/raw/trades_log.csv', index=False)
+            trades_df.to_csv('./data/logging/trades_log.csv', index=False)
             print("Trades saved to 'trades_log.csv'.")
         
         funding_payments_log = self.portfolio.logger.get_logs(log_type='funding_payments')
@@ -288,7 +288,7 @@ class Strategy:
             total_funding_payments = funding_payments_df['funding payment'].sum()
             print(f"Total Funding Payments: {total_funding_payments}")
             # Save the DataFrame to a CSV file
-            funding_payments_df.to_csv('./data/raw/funding_payments_log.csv', index=False)
+            funding_payments_df.to_csv('./data/logging/funding_payments_log.csv', index=False)
             print("Funding payments saved to 'funding_payments_log.csv'.")
         else:
             print("No funding payments logged.")
@@ -301,7 +301,7 @@ class Strategy:
             df_collateral = pd.DataFrame(collateral_values_log)
 
             # Save the DataFrame to a CSV file
-            df_collateral.to_csv('./data/raw/collateral_values_log.csv', index=False)
+            df_collateral.to_csv('./data/logging/collateral_values_log.csv', index=False)
             print("Collateral values saved to 'collateral_values_log.csv'.")
         else:
             print("No collateral values logged yet.")

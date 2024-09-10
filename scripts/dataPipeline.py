@@ -9,27 +9,36 @@ dataHandler = DataHandler()
 start_timestamp = 1672531100000  # 31 Dec 2022 23:59:59
 end_timestamp = 1719792000000    # 1 July 2024 00:00:00
 
-bin_btc_spot = dataHandler.make_spot_df(exchange="binance", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp)
-bin_btc_usdm = dataHandler.make_perp_df(exchange="binance", symbol="BTC/USDT:USDT", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp)
-bin_btc_coinm = dataHandler.make_perp_df(exchange="binance", symbol="BTCUSD_PERP", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp)
+# input_folder = './data/raw/okx/' 
+# output_file = './data/raw/okx_funding_rates.csv'
+# instruments = ['BTC-USDT-SWAP', 'BTC-USD-SWAP', 'ETH-USDT-SWAP', 'ETH-USD-SWAP']
 
-bin_btc_perp = dataHandler.merge_dfs(bin_btc_usdm, bin_btc_coinm, 'binance_btc')
-bin_btc = dataHandler.merge_dfs(bin_btc_perp, bin_btc_spot, 'binance_btc')
 
-print("Binance BTC saved")
+# dataHandler.fetch_funding_rates_okx(input_folder, output_file, instruments)
 
-bin_eth_spot = dataHandler.make_spot_df(exchange="binance", symbol="ETH/USDT", start_time=start_timestamp, end_time=end_timestamp)
-bin_eth_usdm = dataHandler.make_perp_df(exchange="binance", symbol="ETH/USDT:USDT", pair="ETHUSDT", start_time=start_timestamp, end_time=end_timestamp)
-bin_eth_coinm = dataHandler.make_perp_df(exchange="binance", symbol="ETHUSD_PERP", pair="ETHUSDCM", start_time=start_timestamp, end_time=end_timestamp)
+# print("OKX funding rates saved")
 
-bin_eth_perp = dataHandler.merge_dfs(bin_eth_usdm, bin_eth_coinm, 'binance_eth')
-bin_eth = dataHandler.merge_dfs(bin_eth_perp, bin_eth_spot, 'binance_eth')
+# bin_btc_spot = dataHandler.make_spot_df(exchange="binance", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp)
+# bin_btc_usdm = dataHandler.make_perp_df(exchange="binance", symbol="BTC/USDT:USDT", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp)
+# bin_btc_coinm = dataHandler.make_perp_df(exchange="binance", symbol="BTCUSD_PERP", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp)
 
-print("Binance ETH saved")
+# bin_btc_perp = dataHandler.merge_dfs(bin_btc_usdm, bin_btc_coinm, 'binance_btc')
+# bin_btc = dataHandler.merge_dfs(bin_btc_perp, bin_btc_spot, 'binance_btc')
 
-bin_df = dataHandler.merge_dfs(bin_btc, bin_eth, 'binance')
+# print("Binance BTC saved")
 
-print("Binance data saved")
+# bin_eth_spot = dataHandler.make_spot_df(exchange="binance", symbol="ETH/USDT", start_time=start_timestamp, end_time=end_timestamp)
+# bin_eth_usdm = dataHandler.make_perp_df(exchange="binance", symbol="ETH/USDT:USDT", pair="ETHUSDT", start_time=start_timestamp, end_time=end_timestamp)
+# bin_eth_coinm = dataHandler.make_perp_df(exchange="binance", symbol="ETHUSD_PERP", pair="ETHUSDCM", start_time=start_timestamp, end_time=end_timestamp)
+
+# bin_eth_perp = dataHandler.merge_dfs(bin_eth_usdm, bin_eth_coinm, 'binance_eth')
+# bin_eth = dataHandler.merge_dfs(bin_eth_perp, bin_eth_spot, 'binance_eth')
+
+# print("Binance ETH saved")
+
+# bin_df = dataHandler.merge_dfs(bin_btc, bin_eth, 'binance')
+
+# print("Binance data saved")
 
 # bin_btc_test_df = dataHandler.merge_dfs(bin_btc_usdm, bin_btc_spot, 'binance_btc_test')
 

@@ -2,10 +2,99 @@ import ccxt
 from datetime import datetime
 import pandas as pd
 import numpy as np
+import os
+import warnings
+import sys
+
+warnings.filterwarnings("ignore", category=pd.errors.SettingWithCopyWarning)
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class DataHandler:
     def __init__(self):
         pass
+    
+
+    def fetch_funding_rates_okx(self, input_folder, output_file, instruments, encoding='ISO-8859-1'):
+        """
+        Reads all CSV files in the folder, filters rows by instrument, adjusts the timestamp, and combines the data.
+        Keeps only the 1st, 4th, and 5th columns, and renames them to 'asset', 'funding_rate', and 'timestamp'.
+        The data is sorted by timestamp before saving to the final CSV, and prints the number of unique dates.
+
+        Args:
+            input_folder (str): The folder where the CSV files are stored.
+            output_file (str): The output file where combined data will be saved.
+            instruments (list): The list of instrument names to filter by (e.g., ['BTC-USDT-SWAP']).
+            encoding (str): The file encoding (default is 'ISO-8859-1').
+
+        Returns:
+            None
+        """
+        all_data = []  # List to store data from all CSVs
+        files = [f for f in os.listdir(input_folder) if f.endswith('.csv')]  # Get all CSV files
+        total_files = len(files)  # Total number of CSV files to process
+
+        # Loop through all files in the folder with progress counter
+        for idx, filename in enumerate(files, start=1):
+            file_path = os.path.join(input_folder, filename)
+            
+            # Print progress
+            print(f"Processing file {idx} of {total_files}: {filename}")
+
+            # Read the CSV, skip the first row, and filter by instrument
+            df = pd.read_csv(file_path, skiprows=1, header=None, encoding=encoding)
+            filtered_df = df[df[0].isin(instruments)]  # Filter rows where the instrument (column 0) matches
+
+            # Convert the timestamp from UNIX time (in milliseconds) in the 5th column (index 4)
+            filtered_df[4] = pd.to_datetime(filtered_df[4], unit='ms')
+
+            # Round timestamps down to the nearest hour
+            filtered_df[4] = filtered_df[4].dt.floor('H')
+
+            # Define the date ranges for adding one hour
+            add_hour_range1_start = pd.to_datetime('2023-03-26 08:00:00')
+            add_hour_range1_end = pd.to_datetime('2023-10-29 00:00:00')
+            add_hour_range2_start = pd.to_datetime('2024-03-31 08:00:00')
+
+            # Add 1 hour within the specific date ranges
+            filtered_df.loc[(filtered_df[4] >= add_hour_range1_start) & (filtered_df[4] < add_hour_range1_end), 4] += pd.Timedelta(hours=1)
+            filtered_df.loc[filtered_df[4] >= add_hour_range2_start, 4] += pd.Timedelta(hours=1)
+
+            # Select only the 1st, 4th, and 5th columns
+            filtered_df = filtered_df[[0, 3, 4]]
+
+            # Rename the columns to 'asset', 'funding_rate', and 'timestamp'
+            filtered_df.columns = ['asset', 'funding_rate', 'timestamp']
+
+            # Format the timestamp as 'YYYY-MM-DD HH:MM:SS'
+            filtered_df['timestamp'] = filtered_df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+
+            # Append the filtered DataFrame to the list
+            all_data.append(filtered_df)
+
+        # Concatenate all dataframes into one
+        if all_data:
+            combined_df = pd.concat(all_data, ignore_index=True)
+            
+            # Sort the DataFrame by 'timestamp'
+            combined_df = combined_df.sort_values(by='timestamp')
+            
+            # Filter to only include data up to '2024-07-01 01:00:00'
+            combined_df = combined_df[combined_df['timestamp'] <= '2024-07-01 01:00:00']
+
+            # Save the combined DataFrame to a CSV file
+            combined_df.to_csv(output_file, index=False)
+
+            # Print summary: number of rows per instrument
+            for instrument in instruments:
+                count = combined_df[combined_df['asset'] == instrument].shape[0]
+                print(f"{instrument}: {count} rows")
+
+            # Print the number of unique dates in the 'timestamp' column
+            combined_df['date'] = pd.to_datetime(combined_df['timestamp']).dt.date  # Extract the date part only
+            unique_dates_count = combined_df['date'].nunique()
+            print(f"Number of unique dates: {unique_dates_count}")
+
 
     def fetch_funding_rate_data(self, exchange: str, symbol: str, start_time: int, end_time: int, limit: int = 1000) -> None:
         """
@@ -20,29 +109,71 @@ class DataHandler:
         """
         ex = getattr(ccxt, exchange)()
         funding_rates = []
+        if exchange == 'binance':
+            while start_time < end_time:
+                # Fetch funding rate history with start_time and end_time
+                funding_history_dict = ex.fetch_funding_rate_history(symbol=symbol, limit=limit, since=start_time, params={"endTime": end_time})
+                
+                if not funding_history_dict:
+                    break
+                
+                funding_time = [
+                    datetime.fromtimestamp(d["timestamp"]/1000).strftime('%Y-%m-%d %H:%M:%S') for d in funding_history_dict
+                ]
+                funding_rate = [d["fundingRate"] for d in funding_history_dict]
+                
+                # Combine funding time and rate into tuples and extend the list
+                funding_rates.extend(list(zip(funding_time, funding_rate)))
+                
+                # Update start_time to the timestamp of the last fetched record + 1 to avoid duplicates
+                start_time = funding_history_dict[-1]["timestamp"] + 1
 
-        while start_time < end_time:
-            # Fetch funding rate history with start_time and end_time
-            funding_history_dict = ex.fetch_funding_rate_history(symbol=symbol, limit=limit, since=start_time, params={"endTime": end_time})
+                # If we fetched less than the limit, we assume there's no more data available
+                if len(funding_history_dict) < limit:
+                    break
+                
+        elif exchange == 'bybit':
+            limit = 200
+            while end_time > start_time:
+                # Fetch funding rate history working backward from end_time
+                funding_history_dict = ex.fetch_funding_rate_history(symbol=symbol, limit=limit, since=start_time, params={"endTime": end_time})
+                
+                if not funding_history_dict:
+                    break
+                
+                # Convert timestamps and funding rates into a readable format
+                funding_time = [
+                    datetime.fromtimestamp(d["timestamp"] / 1000).strftime('%Y-%m-%d %H:%M:%S') for d in funding_history_dict
+                ]
+                funding_rate = [d["fundingRate"] for d in funding_history_dict]
+                
+                # Combine funding time and rate into tuples and extend the list
+                funding_rates.extend(list(zip(funding_time, funding_rate)))
+                
+                # Update end_time to the timestamp of the oldest fetched record - 1 to avoid duplicates
+                oldest_timestamp = funding_history_dict[0]["timestamp"]
+                end_time = oldest_timestamp - 1
+
+                # If we fetched less than the limit, we assume there's no more data available
+                if len(funding_history_dict) < limit:
+                    break
             
-            if not funding_history_dict:
-                break
+            funding_rates.sort(key=lambda x: x[0])
             
-            funding_time = [
-                datetime.fromtimestamp(d["timestamp"]/1000).strftime('%Y-%m-%d %H:%M:%S') for d in funding_history_dict
-            ]
-            funding_rate = [d["fundingRate"] for d in funding_history_dict]
+        elif exchange == 'okx':
+            df = pd.read_csv('./data/raw/okx_funding_rates.csv')
             
+            # Filter rows where the asset matches the symbol
+            filtered_df = df[df['asset'] == symbol]
+
+            # Extract funding time (timestamp) and funding rate
+            funding_time = filtered_df['timestamp'].tolist()  # Convert timestamp to list
+            funding_rate = filtered_df['funding_rate'].tolist()  # Convert funding rate to list
+
             # Combine funding time and rate into tuples and extend the list
             funding_rates.extend(list(zip(funding_time, funding_rate)))
             
-            # Update start_time to the timestamp of the last fetched record + 1 to avoid duplicates
-            start_time = funding_history_dict[-1]["timestamp"] + 1
-
-            # If we fetched less than the limit, we assume there's no more data available
-            if len(funding_history_dict) < limit:
-                break
-        
+            
         print(f"Total rates fetched: {len(funding_rates)}")
         return funding_rates
 
