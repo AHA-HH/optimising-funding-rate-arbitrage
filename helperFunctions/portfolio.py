@@ -358,32 +358,3 @@ class Portfolio:
                     return 0.0005
                 elif margin == "coin":
                     return 0.0005
-
-    
-    def check_delta_neutral(self):
-        """
-        Check if the portfolio is delta neutral.
-        """
-        pass
-    
-    
-    def adjust_positions(self):
-        """
-        Adjust the positions in the portfolio to maintain delta neutrality.
-        """
-        pass
-    
-    
-    def calculate_portfolio_weighting(self):
-        """
-        Calculate the current weighting of each asset in the portfolio.
-        """
-        pass
-    
-    
-    def rebalance_portfolio(self):
-        """
-        Rebalance the portfolio based on the current weighting of each asset.
-        """
-        pass
-    

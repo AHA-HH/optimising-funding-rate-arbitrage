@@ -1,39 +1,26 @@
-# SYMBOLS = [] # List of symbols to be used in the strategy
-# EXCHANGES = [binance, bitget, bybit, okx] # List of exchanges to be used in the strategy
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# SYMBOLS
-# Binance
-# BTC/USDT BTCUSD Spot
-# BTC/USDT:USDT BTC USD Margin
-# BTCUSD_PERP BTC Coin Margin
-# ETH/USDT ETHUSD Spot
-# ETH/USDT:USDT ETH USD Margin
-# ETHUSD_PERP ETH Coin Margin
+from helperFunctions.strategy import Strategy
+from helperFunctions.metrics import Metrics
 
-# OKX
-# BTC/USDT          BTCUSD Spot
-# BTC-USDT-SWAP     BTC USD Margin
-# BTC-USD-SWAP      BTC Coin Margin
-# ETH/USDT          ETHUSD Spot
-# ETH-USDT-SWAP     ETH USD Margin
-# ETH-USD-SWAP      ETH Coin Margin
+filepath = './data/all_exchanges.csv'
+entry_signal = 0.0000000001
+exit_signal = 0
+capital = 10000000
+output_folder = 'test'
 
-# BYBIT
+strategy = Strategy(
+    filepath=filepath,
+    entry_threshold=entry_signal, 
+    exit_threshold=exit_signal, 
+    capital=capital, 
+    output_dir=output_folder
+    )
 
-# BTC/USDT          BTCUSD Spot
-# BTC/USDT:USDT     BTC USD Margin
-# BTCUSDT           BTC USD Margin
-# BTCUSD            BTC Coin Margin
-# ETH/USDT          ETHUSD Spot
-# ETH/USDT:USDT     ETH USD Margin
-# ETHUSDT           ETH USD Margin
-# ETHUSD            ETH Coin Margin
+strategy.run()    
 
-# BITGET
-# BTC/USDT          BTCUSD Spot
-# BTC/USDT:USDT     BTC USD Margin
-# BTC/USD:BTC       BTC Coin Margin
-# BTCUSD            BTC USD Margin
-# ETH/USDT          ETHUSD Spot
-# ETH/USDT:USDT     ETH USD Margin
-# ETH/USD:ETH       ETH Coin Margin
+metrics = Metrics(
+    input_dir=output_folder
+    )
