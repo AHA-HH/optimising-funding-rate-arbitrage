@@ -19,8 +19,8 @@ class Portfolio:
                 'ethereum': {'min': 0.05, 'max': 0.3}
             },
             'okx': {
-                'bitcoin': {'min': 0.1, 'max': 0.65},
-                'ethereum': {'min': 0.1, 'max': 0.65}
+                'bitcoin': {'min': 0.1, 'max': 0.45},
+                'ethereum': {'min': 0.1, 'max': 0.45}
             },
             'bybit': {
                 'bitcoin': {'min': 0.1, 'max': 0.55},
@@ -351,7 +351,6 @@ class Portfolio:
                 elif margin == "coin":
                     return 0.00055
         elif exchange == "okx":
-            print('change fees')
             if trade == "spot":
                 return 0.001
             elif trade == "futures":

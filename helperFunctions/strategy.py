@@ -239,7 +239,7 @@ class Strategy:
         # loop through all timestamps
         for current_time in timestamps:
         # for current_time in timestamps[0:10]:
-            # print(current_time)
+            print(current_time)
             
             # look for open short positions and calculate funding rate payments
             for short_position in self.portfolio.get_open_short_positions():

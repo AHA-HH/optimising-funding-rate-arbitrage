@@ -53,7 +53,7 @@ class DataHandler:
 
             # Define the date ranges for adding one hour
             add_hour_range1_start = pd.to_datetime('2023-03-26 08:00:00')
-            add_hour_range1_end = pd.to_datetime('2023-10-29 00:00:00')
+            add_hour_range1_end = pd.to_datetime('2023-10-29 01:00:00')
             add_hour_range2_start = pd.to_datetime('2024-03-31 08:00:00')
 
             # Add 1 hour within the specific date ranges
@@ -161,7 +161,7 @@ class DataHandler:
             funding_rates.sort(key=lambda x: x[0])
             
         elif exchange == 'okx':
-            df = pd.read_csv('./data/raw/okx_funding_rates.csv')
+            df = pd.read_csv('./data/processed/okx_funding_rates.csv')
             
             # Filter rows where the asset matches the symbol
             filtered_df = df[df['asset'] == symbol]
@@ -212,7 +212,7 @@ class DataHandler:
                     print("No more candles found.")
                     break
 
-                # Convert the timestamp to human-readable format and extend the list
+                # Convert the timestamp
                 formatted_candles = [
                     [
                         datetime.fromtimestamp(candle[0] / 1000).strftime('%Y-%m-%d %H:%M:%S'),  # Format timestamp
@@ -237,15 +237,17 @@ class DataHandler:
                 
                 print(f"Fetched {len(candles)} candles. New start_time: {datetime.fromtimestamp(start_time / 1000)}")
                 
-        elif exchange == 'bybit':
-            # Calculate the maximum interval (200 days) in milliseconds
-            # max_interval = 200 * 24 * 60 * 60 * 1000  # 200 days in milliseconds
-            limit = 1000
+        elif exchange == 'bybit' or exchange == 'okx':
+            if exchange == 'bybit':
+                limit = 1000
+            elif exchange == 'okx':
+                limit = 100
             timeframe = "4h"
             hours_to_subtract = 4 * 60 * 60 * 1000  # 4 hours in milliseconds
             start_time -= hours_to_subtract  # Subtract 4 hours from the start_time
             ohlcv_data_4h = []  # To store 4-hour candles
-            if symbol == 'BTC/USDT' or symbol == 'ETH/USDT':
+            
+            if symbol in ['BTC/USDT', 'ETH/USDT', 'BTC-USDT-SWAP', 'BTC-USD-SWAP', 'ETH-USDT-SWAP', 'ETH-USD-SWAP']:
                 while start_time < end_time:
                     # Set the current end time to be the lesser of the actual end_time or 200 days after start_time
                     max_interval = 200 * 24 * 60 * 60 * 1000  # 200 days in milliseconds
@@ -263,7 +265,7 @@ class DataHandler:
                         candle for candle in candles if candle[0] <= end_time
                     ]
 
-                    # Convert the timestamp to human-readable format and extend the list
+                    # Convert the timestamp
                     formatted_candles = [
                         [
                             datetime.fromtimestamp(candle[0] / 1000).strftime('%Y-%m-%d %H:%M:%S'),  # Format timestamp
@@ -291,9 +293,6 @@ class DataHandler:
                 print(f"Total 4-hour candles fetched: {len(ohlcv_data_4h)}")
                 
             elif symbol in ['BTCUSDT', 'BTCUSD', 'ETHUSDT', 'ETHUSD']:
-                limit = 1000
-                timeframe = "4h"  # or "8h" depending on your need
-
                 # Start fetching from the end_time and move backward
                 while end_time > start_time:
                     # Fetch OHLCV data working backward from end_time
@@ -306,7 +305,7 @@ class DataHandler:
                     # Filter candles to ensure they don't exceed the end_time
                     filtered_candles = [candle for candle in candles if candle[0] >= start_time]
 
-                    # Convert the timestamp to human-readable format and extend the list
+                    # Convert the timestamp
                     formatted_candles = [
                         [
                             datetime.fromtimestamp(candle[0] / 1000).strftime('%Y-%m-%d %H:%M:%S'),  # Format timestamp
@@ -336,7 +335,6 @@ class DataHandler:
                  
                 print(f"Total 4-hour candles fetched: {len(ohlcv_data_4h)}")
                 
-            
             for i in range(0, len(ohlcv_data_4h), 2):
                 if i + 1 < len(ohlcv_data_4h):  # Ensure there are two consecutive candles
                     first_candle = ohlcv_data_4h[i]
@@ -348,7 +346,7 @@ class DataHandler:
                     high_price = max(first_candle[2], second_candle[2])  # Highest high from both candles
                     low_price = min(first_candle[3], second_candle[3])  # Lowest low from both candles
                     close_price = second_candle[4]  # Close price from the second candle
-                    volume = round(first_candle[5] + second_candle[5], 5)  # Sum of the volume from both candles, rounded to 5 decimal places
+                    volume = round(first_candle[5] + second_candle[5], 5)  # Sum of the volume from both candles
 
                     # Combine into an 8-hour OHLCV candle
                     ohlcv_data.append([timestamp, open_price, high_price, low_price, close_price, volume])
@@ -431,6 +429,7 @@ class DataHandler:
         perp_df.drop(columns=['time', 'exchange', 'crypto', 'pair', 'contract'], inplace=True)
         
         return perp_df
+    
     
     def merge_dfs(self, df1: pd.DataFrame, df2: pd.DataFrame, filename: str) -> pd.DataFrame:
         """

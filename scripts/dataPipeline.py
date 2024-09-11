@@ -1,5 +1,7 @@
 import sys
 import os
+import pandas as pd
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from helperFunctions.dataHandling import DataHandler
@@ -9,86 +11,92 @@ dataHandler = DataHandler()
 start_timestamp = 1672531100000  # 31 Dec 2022 23:59:59
 end_timestamp = 1719792000000    # 1 July 2024 00:00:00
 
+# Binance
 
+bin_btc_spot = dataHandler.make_spot_df(exchange="binance", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp)
+bin_btc_usdm = dataHandler.make_perp_df(exchange="binance", symbol="BTC/USDT:USDT", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp)
+bin_btc_coinm = dataHandler.make_perp_df(exchange="binance", symbol="BTCUSD_PERP", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp)
 
-# bin_btc_spot = dataHandler.make_spot_df(exchange="binance", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp)
-# bin_btc_usdm = dataHandler.make_perp_df(exchange="binance", symbol="BTC/USDT:USDT", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp)
-# bin_btc_coinm = dataHandler.make_perp_df(exchange="binance", symbol="BTCUSD_PERP", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp)
+bin_btc_perp = dataHandler.merge_dfs(bin_btc_usdm, bin_btc_coinm, 'binance_btc')
+bin_btc = dataHandler.merge_dfs(bin_btc_perp, bin_btc_spot, 'binance_btc')
 
-# bin_btc_perp = dataHandler.merge_dfs(bin_btc_usdm, bin_btc_coinm, 'binance_btc')
-# bin_btc = dataHandler.merge_dfs(bin_btc_perp, bin_btc_spot, 'binance_btc')
+print("Binance BTC saved")
 
-# print("Binance BTC saved")
+bin_eth_spot = dataHandler.make_spot_df(exchange="binance", symbol="ETH/USDT", start_time=start_timestamp, end_time=end_timestamp)
+bin_eth_usdm = dataHandler.make_perp_df(exchange="binance", symbol="ETH/USDT:USDT", pair="ETHUSDT", start_time=start_timestamp, end_time=end_timestamp)
+bin_eth_coinm = dataHandler.make_perp_df(exchange="binance", symbol="ETHUSD_PERP", pair="ETHUSDCM", start_time=start_timestamp, end_time=end_timestamp)
 
-# bin_eth_spot = dataHandler.make_spot_df(exchange="binance", symbol="ETH/USDT", start_time=start_timestamp, end_time=end_timestamp)
-# bin_eth_usdm = dataHandler.make_perp_df(exchange="binance", symbol="ETH/USDT:USDT", pair="ETHUSDT", start_time=start_timestamp, end_time=end_timestamp)
-# bin_eth_coinm = dataHandler.make_perp_df(exchange="binance", symbol="ETHUSD_PERP", pair="ETHUSDCM", start_time=start_timestamp, end_time=end_timestamp)
+bin_eth_perp = dataHandler.merge_dfs(bin_eth_usdm, bin_eth_coinm, 'binance_eth')
+bin_eth = dataHandler.merge_dfs(bin_eth_perp, bin_eth_spot, 'binance_eth')
 
-# bin_eth_perp = dataHandler.merge_dfs(bin_eth_usdm, bin_eth_coinm, 'binance_eth')
-# bin_eth = dataHandler.merge_dfs(bin_eth_perp, bin_eth_spot, 'binance_eth')
+print("Binance ETH saved")
 
-# print("Binance ETH saved")
+bin_df = dataHandler.merge_dfs(bin_btc, bin_eth, 'binance')
 
-# bin_df = dataHandler.merge_dfs(bin_btc, bin_eth, 'binance')
+print("Binance data saved")
 
-# print("Binance data saved")
+# Bybit
 
-# bin_btc_test_df = dataHandler.merge_dfs(bin_btc_usdm, bin_btc_spot, 'binance_btc_test')
+bybit_btc_spot = dataHandler.make_spot_df(exchange="bybit", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp)
+bybit_btc_usdm = dataHandler.make_perp_df(exchange="bybit", symbol="BTCUSDT", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp)
+bybit_btc_coinm = dataHandler.make_perp_df(exchange="bybit", symbol="BTCUSD", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp)
 
-# print("Binance test data saved")
+bybit_btc_perp = dataHandler.merge_dfs(bybit_btc_usdm, bybit_btc_coinm, 'bybit_btc')
+bybit_btc = dataHandler.merge_dfs(bybit_btc_perp, bybit_btc_spot, 'bybit_btc')
 
-# bybit_btc_spot = dataHandler.make_spot_df(exchange="bybit", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp)
-# bybit_btc_usdm = dataHandler.make_perp_df(exchange="bybit", symbol="BTCUSDT", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp)
-# bybit_btc_coinm = dataHandler.make_perp_df(exchange="bybit", symbol="BTCUSD", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp)
+print("Bybit BTC saved")
 
-# bybit_btc_perp = dataHandler.merge_dfs(bybit_btc_usdm, bybit_btc_coinm, 'bybit_btc')
-# bybit_btc = dataHandler.merge_dfs(bybit_btc_perp, bybit_btc_spot, 'bybit_btc')
+bybit_eth_spot = dataHandler.make_spot_df(exchange="bybit", symbol="ETH/USDT", start_time=start_timestamp, end_time=end_timestamp)
+bybit_eth_usdm = dataHandler.make_perp_df(exchange="bybit", symbol="ETHUSDT", pair="ETHUSDT", start_time=start_timestamp, end_time=end_timestamp)
+bybit_eth_coinm = dataHandler.make_perp_df(exchange="bybit", symbol="ETHUSD", pair="ETHUSDCM", start_time=start_timestamp, end_time=end_timestamp)
 
-# print("Bybit BTC saved")
+bybit_eth_perp = dataHandler.merge_dfs(bybit_eth_usdm, bybit_eth_coinm, 'bybit_eth')
+bybit_eth = dataHandler.merge_dfs(bybit_eth_perp, bybit_eth_spot, 'bybit_eth')
 
-# bybit_eth_spot = dataHandler.make_spot_df(exchange="bybit", symbol="ETH/USDT", start_time=start_timestamp, end_time=end_timestamp)
-# bybit_eth_usdm = dataHandler.make_perp_df(exchange="bybit", symbol="ETHUSDT", pair="ETHUSDT", start_time=start_timestamp, end_time=end_timestamp)
-# bybit_eth_coinm = dataHandler.make_perp_df(exchange="bybit", symbol="ETHUSD", pair="ETHUSDCM", start_time=start_timestamp, end_time=end_timestamp)
+print("Bybit ETH saved")
 
-# bybit_eth_perp = dataHandler.merge_dfs(bybit_eth_usdm, bybit_eth_coinm, 'bybit_eth')
-# bybit_eth = dataHandler.merge_dfs(bybit_eth_perp, bybit_eth_spot, 'bybit_eth')
+bybit_df = dataHandler.merge_dfs(bybit_btc, bybit_eth, 'bybit')
 
-# print("Bybit ETH saved")
+print("Bybit data saved")
 
-# bybit_df = dataHandler.merge_dfs(bybit_btc, bybit_eth, 'bybit')
+# OKX
 
-# print("Bybit data saved")
+input_folder = './data/raw/okx/' 
+output_file = './data/processed/okx_funding_rates.csv'
+instruments = ['BTC-USDT-SWAP', 'BTC-USD-SWAP', 'ETH-USDT-SWAP', 'ETH-USD-SWAP']
 
-# two_exchange_test_df = dataHandler.merge_dfs(bin_df, bybit_df, 'exchanges_test')
+dataHandler.fetch_funding_rates_okx(input_folder, output_file, instruments)
 
-# print("Two exchange test data saved")
+print("OKX funding rates saved")
 
-# input_folder = './data/raw/okx/' 
-# output_file = './data/raw/okx_funding_rates.csv'
-# instruments = ['BTC-USDT-SWAP', 'BTC-USD-SWAP', 'ETH-USDT-SWAP', 'ETH-USD-SWAP']
+okx_btc_spot = dataHandler.make_spot_df(exchange="okx", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp)
+okx_btc_usdm = dataHandler.make_perp_df(exchange="okx", symbol="BTC-USDT-SWAP", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp)
+okx_btc_coinm = dataHandler.make_perp_df(exchange="okx", symbol="BTC-USD-SWAP", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp)
 
-# dataHandler.fetch_funding_rates_okx(input_folder, output_file, instruments)
+okx_btc_perp = dataHandler.merge_dfs(okx_btc_usdm, okx_btc_coinm, 'okx_btc')
+okx_btc = dataHandler.merge_dfs(okx_btc_perp, okx_btc_spot, 'okx_btc')
 
-# print("OKX funding rates saved")
+print("OKX BTC saved")
 
-# okx_btc_spot = dataHandler.make_spot_df(exchange="okx", symbol="BTC/USDT", start_time=start_timestamp, end_time=end_timestamp)
-# okx_btc_usdm = dataHandler.make_perp_df(exchange="okx", symbol="BTC-USDT-SWAP", pair="BTCUSDT", start_time=start_timestamp, end_time=end_timestamp)
-# okx_btc_coinm = dataHandler.make_perp_df(exchange="okx", symbol="BTC-USD-SWAP", pair="BTCUSDCM", start_time=start_timestamp, end_time=end_timestamp)
+okx_eth_spot = dataHandler.make_spot_df(exchange="okx", symbol="ETH/USDT", start_time=start_timestamp, end_time=end_timestamp)
+okx_eth_usdm = dataHandler.make_perp_df(exchange="okx", symbol="ETH-USDT-SWAP", pair="ETHUSDT", start_time=start_timestamp, end_time=end_timestamp)
+okx_eth_coinm = dataHandler.make_perp_df(exchange="okx", symbol="ETH-USD-SWAP", pair="ETHUSDCM", start_time=start_timestamp, end_time=end_timestamp)
 
-# okx_btc_perp = dataHandler.merge_dfs(okx_btc_usdm, okx_btc_coinm, 'okx_btc')
-# okx_btc = dataHandler.merge_dfs(okx_btc_perp, okx_btc_spot, 'okx_btc')
+okx_eth_perp = dataHandler.merge_dfs(okx_eth_usdm, okx_eth_coinm, 'okx_eth')
+okx_eth = dataHandler.merge_dfs(okx_eth_perp, okx_eth_spot, 'okx_eth')
 
-# print("OKX BTC saved")
+print("OKX ETH saved")
 
-# okx_eth_spot = dataHandler.make_spot_df(exchange="okx", symbol="ETH/USDT", start_time=start_timestamp, end_time=end_timestamp)
-# okx_eth_usdm = dataHandler.make_perp_df(exchange="okx", symbol="ETH-USDT-SWAP", pair="ETHUSDT", start_time=start_timestamp, end_time=end_timestamp)
-# okx_eth_coinm = dataHandler.make_perp_df(exchange="okx", symbol="ETH-USD-SWAP", pair="ETHUSDCM", start_time=start_timestamp, end_time=end_timestamp)
+okx_df = dataHandler.merge_dfs(okx_btc, okx_eth, 'okx')
 
-# okx_eth_perp = dataHandler.merge_dfs(okx_eth_usdm, okx_eth_coinm, 'okx_eth')
-# okx_eth = dataHandler.merge_dfs(okx_eth_perp, okx_eth_spot, 'okx_eth')
+print("OKX data saved")
 
-# print("OKX ETH saved")
+merged_df = pd.concat([bin_df, bybit_df, okx_df])
 
-# okx_df = dataHandler.merge_dfs(okx_btc, okx_eth, 'okx')
+merged_df.sort_index(level='time', inplace=True)
 
-# print("OKX data saved")
+merged_df.to_csv(f'./data/all_exchanges.csv', index=True)
+
+print(f'Data saved to ./data/all_exchanges.csv')
+
+print("All data saved and ready for use")
