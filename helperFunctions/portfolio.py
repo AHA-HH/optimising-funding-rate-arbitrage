@@ -330,12 +330,28 @@ class Portfolio:
                 adjusted_position_size = asset_max_value - collateral_in_asset
                 if adjusted_position_size >= asset_min_value:
                     position_size = adjusted_position_size
-
         return position_size
     
     
     def get_exchange_transaction_fee_pct(self, exchange: str, trade: str, margin: str) -> float:
         if exchange == "binance":
+            if trade == "spot":
+                return 0.001
+            elif trade == "futures":
+                if margin == "usd":
+                    return 0.0005
+                elif margin == "coin":
+                    return 0.0005
+        elif exchange == "bybit":
+            if trade == "spot":
+                return 0.001
+            elif trade == "futures":
+                if margin == "usd":
+                    return 0.00055
+                elif margin == "coin":
+                    return 0.00055
+        elif exchange == "okx":
+            print('change fees')
             if trade == "spot":
                 return 0.001
             elif trade == "futures":

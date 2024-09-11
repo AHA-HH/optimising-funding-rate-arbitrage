@@ -236,6 +236,122 @@ class DataHandler:
                     break
                 
                 print(f"Fetched {len(candles)} candles. New start_time: {datetime.fromtimestamp(start_time / 1000)}")
+                
+        elif exchange == 'bybit':
+            # Calculate the maximum interval (200 days) in milliseconds
+            # max_interval = 200 * 24 * 60 * 60 * 1000  # 200 days in milliseconds
+            limit = 1000
+            timeframe = "4h"
+            hours_to_subtract = 4 * 60 * 60 * 1000  # 4 hours in milliseconds
+            start_time -= hours_to_subtract  # Subtract 4 hours from the start_time
+            ohlcv_data_4h = []  # To store 4-hour candles
+            if symbol == 'BTC/USDT' or symbol == 'ETH/USDT':
+                while start_time < end_time:
+                    # Set the current end time to be the lesser of the actual end_time or 200 days after start_time
+                    max_interval = 200 * 24 * 60 * 60 * 1000  # 200 days in milliseconds
+                    current_end_time = min(start_time + max_interval, end_time)
+
+                    # Fetch OHLCV data for this interval
+                    candles = ex.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit, since=start_time, params={"endTime": current_end_time})
+
+                    if not candles:
+                        print("No more candles found.")
+                        break
+
+                    # Filter candles to ensure they don't exceed the end_time
+                    filtered_candles = [
+                        candle for candle in candles if candle[0] <= end_time
+                    ]
+
+                    # Convert the timestamp to human-readable format and extend the list
+                    formatted_candles = [
+                        [
+                            datetime.fromtimestamp(candle[0] / 1000).strftime('%Y-%m-%d %H:%M:%S'),  # Format timestamp
+                            candle[1],  # Open
+                            candle[2],  # High
+                            candle[3],  # Low
+                            candle[4],  # Close
+                            candle[5],  # Volume
+                        ]
+                        for candle in filtered_candles
+                    ]
+
+                    ohlcv_data_4h.extend(formatted_candles)
+
+                    # Update start_time to the timestamp of the last fetched candlestick (without adding 1)
+                    start_time = candles[-1][0] + 1
+
+                    # If we fetched less than the limit, we assume there's no more data available
+                    if len(candles) + 1 < limit:
+                        print("Fetched less than the limit. Possibly no more data available.")
+                        break
+                    
+                    print(f"Fetched {len(filtered_candles)} candles. New start_time: {datetime.fromtimestamp(start_time / 1000)}")
+                
+                print(f"Total 4-hour candles fetched: {len(ohlcv_data_4h)}")
+                
+            elif symbol in ['BTCUSDT', 'BTCUSD', 'ETHUSDT', 'ETHUSD']:
+                limit = 1000
+                timeframe = "4h"  # or "8h" depending on your need
+
+                # Start fetching from the end_time and move backward
+                while end_time > start_time:
+                    # Fetch OHLCV data working backward from end_time
+                    candles = ex.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit, since=start_time, params={"endTime": end_time})
+
+                    if not candles:
+                        print("No more candles found.")
+                        break
+
+                    # Filter candles to ensure they don't exceed the end_time
+                    filtered_candles = [candle for candle in candles if candle[0] >= start_time]
+
+                    # Convert the timestamp to human-readable format and extend the list
+                    formatted_candles = [
+                        [
+                            datetime.fromtimestamp(candle[0] / 1000).strftime('%Y-%m-%d %H:%M:%S'),  # Format timestamp
+                            candle[1],  # Open
+                            candle[2],  # High
+                            candle[3],  # Low
+                            candle[4],  # Close
+                            candle[5],  # Volume
+                        ]
+                        for candle in filtered_candles
+                    ]
+
+                    ohlcv_data_4h.extend(formatted_candles)
+
+                    # Update end_time to the timestamp of the oldest fetched candlestick - 1 to avoid duplicates
+                    oldest_timestamp = candles[0][0]
+                    end_time = oldest_timestamp - 1
+
+                    # If fewer than the limit were fetched, assume no more data is available
+                    if len(candles) < limit:
+                        print("Fetched less than the limit. Possibly no more data available.")
+                        break
+
+                    print(f"Fetched {len(filtered_candles)} candles. New end_time: {datetime.fromtimestamp(end_time / 1000)}")
+                
+                ohlcv_data_4h.sort(key=lambda x: x[0])
+                 
+                print(f"Total 4-hour candles fetched: {len(ohlcv_data_4h)}")
+                
+            
+            for i in range(0, len(ohlcv_data_4h), 2):
+                if i + 1 < len(ohlcv_data_4h):  # Ensure there are two consecutive candles
+                    first_candle = ohlcv_data_4h[i]
+                    second_candle = ohlcv_data_4h[i + 1]
+
+                    # Aggregating the two 4-hour candlesticks into one 8-hour candlestick
+                    timestamp = second_candle[0]  # Use the timestamp of the first candle for the 8h candle
+                    open_price = first_candle[1]  # Open price from the first candle
+                    high_price = max(first_candle[2], second_candle[2])  # Highest high from both candles
+                    low_price = min(first_candle[3], second_candle[3])  # Lowest low from both candles
+                    close_price = second_candle[4]  # Close price from the second candle
+                    volume = round(first_candle[5] + second_candle[5], 5)  # Sum of the volume from both candles, rounded to 5 decimal places
+
+                    # Combine into an 8-hour OHLCV candle
+                    ohlcv_data.append([timestamp, open_price, high_price, low_price, close_price, volume])
 
         print(f"Total candles fetched: {len(ohlcv_data)}")
         return ohlcv_data
