@@ -4,11 +4,12 @@ from helperFunctions.position import Position
 from helperFunctions.logging import Logger
 
 class Portfolio:
-    def __init__(self, initial_capital: float = 0) -> None:
+    def __init__(self, initial_capital: float = 0, binance_pct: float = 0.6, okx_pct: float = 0.2, bybit_pct: float = 0.2) -> None:
         self.positions = []  # List to hold all positions
         self.trade_count = 0  # Total number of trades
         self.trade_open_count = 0  # Number of open trades
         self.trade_close_count = 0  # Number of closed trades
+        
         
         # Set weight ranges for portfolio allocation
         self.unallocated_weight_range = {'min': 0.1, 'max': 0.2} # 10-20% of each exchanged unallocated for flexibility and risk management
@@ -34,6 +35,9 @@ class Portfolio:
         }
         
         self.initial_capital = initial_capital
+        self.binance_pct = binance_pct
+        self.okx_pct = okx_pct
+        self.bybit_pct = bybit_pct
         
         self.binance_liquid_cash = 0
         
@@ -206,11 +210,11 @@ class Portfolio:
         """
         Assign capital to a specific exchange.
         """
-        self.binance_liquid_cash = 0.6 * self.initial_capital
+        self.binance_liquid_cash = self.binance_pct * self.initial_capital
 
-        self.okx_liquid_cash = 0.2 * self.initial_capital
+        self.okx_liquid_cash = self.okx_pct * self.initial_capital
 
-        self.bybit_liquid_cash = 0.2 * self.initial_capital
+        self.bybit_liquid_cash = self.bybit_pct * self.initial_capital
         
         if self.binance_liquid_cash + self.okx_liquid_cash + self.bybit_liquid_cash != self.initial_capital:
             raise Exception("Initial capital allocation to exchanges is incorrect")
@@ -264,10 +268,10 @@ class Portfolio:
         self.funding_notional = self.binance_funding_payment + self.okx_funding_payment + self.bybit_funding_payment
         self.overall_notional = self.portfolio_notional + self.funding_notional
         
+        print(self.initial_capital)
         print(self.portfolio_notional)
         print(self.funding_notional)
         print(self.overall_notional)
-        # return self.portfolio_notional
 
 
     def calculate_position_size(self, exchange: str, crypto: str, pair: str):
@@ -384,3 +388,12 @@ class Portfolio:
                     return 0.0005
                 elif margin == "coin":
                     return 0.0005
+
+
+
+
+
+
+
+
+

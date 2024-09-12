@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import warnings
+
 warnings.filterwarnings("ignore", category=pd.errors.SettingWithCopyWarning)
 
 from helperFunctions.logging import Logger
@@ -21,10 +22,10 @@ class Metrics:
         self.risk_free_rate = pd.read_csv(f'./data/processed/risk_free_rate.csv')
         
         self.time_periods = [
-            {"name": "H1 2023", "start": "2023-01-01 00:00:00", "end": "2023-06-30 17:00:00", "days": 181}, 
-            {"name": "H2 2023", "start": "2023-07-01 01:00:00", "end": "2023-12-31 16:00:00", "days": 184},
-            {"name": "H1 2024", "start": "2024-01-01 00:00:00", "end": "2024-06-30 17:00:00", "days": 182},
-            {"name": "All", "start": "2023-01-01 00:00:00", "end": "2024-06-30 17:00:00", "days": 547}
+            {"name": "3M", "start": "2023-01-01 00:00:00", "end": "2023-03-31 17:00:00", "days": 90}, 
+            {"name": "6M", "start": "2023-01-01 00:00:00", "end": "2023-06-30 17:00:00", "days": 181},
+            {"name": "12M", "start": "2023-01-01 00:00:00", "end": "2023-12-31 16:00:00", "days": 365},
+            {"name": "18M", "start": "2023-01-01 00:00:00", "end": "2024-06-30 17:00:00", "days": 547}
         ]
         
         self.collateral_columns = [
@@ -49,7 +50,7 @@ class Metrics:
         
         period_risk_free_rate = self.risk_free_rate[(self.risk_free_rate['date'] >= modified_start_time) & (self.risk_free_rate['date'] <= modified_end_time)]
         
-        annualised_return = self.calculate_annualised_return(start_time, end_time, period_collateral, period_funding, number_of_days)
+        annualised_return = self.calculate_annualised_return(start_time, end_time, period_collateral, number_of_days)
         sharpe_ratio, sortino_ratio = self.calculate_sharpe_and_sortino_ratio(period_collateral, period_funding, period_risk_free_rate)
         max_drawdown = self.calculate_max_drawdown(period_collateral)
         
@@ -65,17 +66,16 @@ class Metrics:
         self.logger.log_metrics(period, formatted_annualised_return, formatted_sharpe_ratio, formatted_max_drawdown, formatted_sortino_ratio, formatted_calmar_ratio)
             
         
-    def calculate_annualised_return(self, start_time: str, end_time: str, collateral_log: pd.DataFrame, funding_log: pd.DataFrame, number_of_days: int):
+    def calculate_annualised_return(self, start_time: str, end_time: str, collateral_log: pd.DataFrame, number_of_days: int):
         """
         Calculate the annualised return of the trading strategy.
         """
         initial_portfolio_value = collateral_log[collateral_log['time'] == start_time].drop(columns=['time']).sum(axis=1).values[0]
         
         final_portfolio_value = collateral_log[collateral_log['time'] == end_time].drop(columns=['time']).sum(axis=1).values[0]
+
         
-        total_funding_payments = funding_log['funding payment'].sum()
-        
-        cumulative_return = (final_portfolio_value - initial_portfolio_value + total_funding_payments) / initial_portfolio_value
+        cumulative_return = (final_portfolio_value - initial_portfolio_value) / initial_portfolio_value
         
         annualised_return = ((1 + cumulative_return) ** (365 / number_of_days) - 1) * 100
         
@@ -152,16 +152,7 @@ class Metrics:
             period_name = period['name']
 
             self.calculate_metrics(period=period_name, start_time=start_time, end_time=end_time, number_of_days=number_of_days)
-            
-            # metrics = self.calculate_metrics(period=period_name, start_time=start_time, end_time=end_time, number_of_days=number_of_days)
-            
-            # print(f'{period_name}')
-            # print(f"Annualised Return: {metrics[0]:.4f}%")
-            # print(f"Sharpe Ratio: {metrics[1]:.4f}")
-            # print(f"Max Drawdown: {metrics[2]:.4f}%")
-            # print(f"Sortino Ratio: {metrics[3]:.4f}")
-            # print(f"Calmar Ratio: {metrics[4]:.4f}")
-        
+
         log_data = self.logger.get_logs(log_type='metrics')
         
         if log_data:

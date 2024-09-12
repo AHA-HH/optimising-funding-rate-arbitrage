@@ -16,7 +16,12 @@ class Strategy:
         entry_threshold: float,
         exit_threshold: float,
         capital: float,
+        binance_pct: float,
+        okx_pct: float,
+        bybit_pct: float,
         output_dir: str,
+        threshold_logic: str = 'simple',
+        close_all: bool = False
 
     ) -> None:
         
@@ -24,10 +29,15 @@ class Strategy:
         self.entry_threshold = entry_threshold
         self.exit_threshold = exit_threshold
         self.capital = capital
+        self.binance_pct = binance_pct
+        self.okx_pct = okx_pct
+        self.bybit_pct = bybit_pct
         self.output_dir = output_dir
+        self.threshold_logic = threshold_logic
+        self.close_all = close_all
         
         self.df = pd.read_csv(filepath)
-        self.portfolio = Portfolio(initial_capital=capital)
+        self.portfolio = Portfolio(initial_capital=capital, binance_pct=binance_pct, okx_pct=okx_pct, bybit_pct=bybit_pct)
         
         results_folder = f'./results/{output_dir}'
         
@@ -35,118 +45,20 @@ class Strategy:
             os.makedirs(results_folder)
 
         
-    # def generate_entry_signals(self, current_time) -> None:
-    #     """
-    #     Identify buy opportunity based on the funding rate.
-    #     """
-    #     time_filter = self.df['time'] == current_time
-    #     perp_filter = self.df['contract'] == 'perpetual'
-    #     fr_filter = self.df[time_filter & perp_filter]
-        
-    #     buy_opp = fr_filter[fr_filter['funding rate'] > self.entry_threshold]
-        
-    #     entry_signals = []
-        
-    #     if not buy_opp.empty:
-    #         for _, row in buy_opp.iterrows():
-    #             entry_signal = {
-    #                 'exchange': row['exchange'],
-    #                 'crypto': row['crypto'],
-    #                 'pair': row['pair'],
-    #                 'contract': row['contract'],
-    #                 'open_price': row['open'],
-    #                 'close_price': row['close'],
-    #                 'funding_rate': row['funding rate'],
-    #                 'time': row['time']
-    #             }
-    #             entry_signals.append(entry_signal)
-    #     return entry_signals
-
-    # def generate_entry_signals(self, current_time) -> None:
-    #     """
-    #     Identify buy opportunity based on the funding rate and ensure the previous two funding rates are also positive.
-    #     """
-    #     # Filter for the current time, perpetual contract, and positive funding rate
-    #     time_filter = self.df['time'] == current_time
-    #     perp_filter = self.df['contract'] == 'perpetual'
-    #     fr_filter = self.df[time_filter & perp_filter]
-        
-    #     entry_signals = []
-
-    #     if not fr_filter.empty:
-    #         for _, row in fr_filter.iterrows():
-    #             # Get the previous two funding rates for the same pair and exchange
-    #             pair_filter = self.df['pair'] == row['pair']
-    #             exchange_filter = self.df['exchange'] == row['exchange']
-
-    #             # Sort the dataframe by time and get the previous two funding rates
-    #             relevant_df = self.df[pair_filter & exchange_filter & perp_filter].sort_values(by='time')
-    #             current_idx = relevant_df[relevant_df['time'] == current_time].index[0]
-
-    #             # Check if there are at least two previous funding rates
-    #             if current_idx >= 2:
-    #                 prev_two_rates = relevant_df.iloc[current_idx-2:current_idx]['funding rate']
-
-    #                 # Ensure the previous two funding rates are positive
-    #                 if (prev_two_rates > 0).all():
-    #                     # Check if the current funding rate is greater than the entry threshold
-    #                     if row['funding rate'] > self.entry_threshold:
-    #                         entry_signal = {
-    #                             'exchange': row['exchange'],
-    #                             'crypto': row['crypto'],
-    #                             'pair': row['pair'],
-    #                             'contract': row['contract'],
-    #                             'open_price': row['open'],
-    #                             'close_price': row['close'],
-    #                             'funding_rate': row['funding rate'],
-    #                             'time': row['time']
-    #                         }
-    #                         entry_signals.append(entry_signal)
-
-    #     return entry_signals
-    
-
     def generate_entry_signals(self, current_time) -> None:
         """
-        Identify buy opportunity based on the funding rate and ensure the previous four funding rates are positive for OKX.
+        Identify buy opportunity based on the funding rate.
         """
-        # Filter for the current time, perpetual contract
         time_filter = self.df['time'] == current_time
         perp_filter = self.df['contract'] == 'perpetual'
         fr_filter = self.df[time_filter & perp_filter]
         
+        buy_opp = fr_filter[fr_filter['funding rate'] > self.entry_threshold]
+        
         entry_signals = []
-
-        if not fr_filter.empty:
-            for _, row in fr_filter.iterrows():
-                # Get the previous funding rates for the same pair and exchange
-                pair_filter = self.df['pair'] == row['pair']
-                exchange_filter = self.df['exchange'] == row['exchange']
-
-                # Sort the dataframe by time and get the relevant previous funding rates
-                relevant_df = self.df[pair_filter & exchange_filter & perp_filter].sort_values(by='time')
-                current_idx = relevant_df[relevant_df['time'] == current_time].index[0]
-
-                # For OKX, check the previous four funding rates must be positive
-                if row['exchange'] == 'okx':
-                    if current_idx >= 4:  # Ensure at least four previous rates exist
-                        prev_four_rates = relevant_df.iloc[current_idx-4:current_idx]['funding rate']
-
-                        # Ensure the previous four funding rates are positive
-                        if not (prev_four_rates > 0).all():
-                            continue  # Skip this row if the previous 4 rates aren't all positive
-
-                # For other exchanges, check the previous two funding rates must be positive
-                else:
-                    if current_idx >= 2:  # Ensure at least two previous rates exist
-                        prev_two_rates = relevant_df.iloc[current_idx-2:current_idx]['funding rate']
-
-                        # Ensure the previous two funding rates are positive
-                        if not (prev_two_rates > 0).all():
-                            continue  # Skip this row if the previous 2 rates aren't all positive
-
-                # Check if the current funding rate is greater than the entry threshold
-                if row['funding rate'] > self.entry_threshold:
+        if self.threshold_logic == 'simple':
+            if not buy_opp.empty:
+                for _, row in buy_opp.iterrows():
                     entry_signal = {
                         'exchange': row['exchange'],
                         'crypto': row['crypto'],
@@ -158,9 +70,40 @@ class Strategy:
                         'time': row['time']
                     }
                     entry_signals.append(entry_signal)
+                    
+        elif self.threshold_logic == 'complex':
+            if not fr_filter.empty:
+                for _, row in fr_filter.iterrows():
+                    # Get the previous two funding rates for the same pair and exchange
+                    pair_filter = self.df['pair'] == row['pair']
+                    exchange_filter = self.df['exchange'] == row['exchange']
+
+                    # Sort the dataframe by time and get the previous two funding rates
+                    relevant_df = self.df[pair_filter & exchange_filter & perp_filter].sort_values(by='time')
+                    current_idx = relevant_df[relevant_df['time'] == current_time].index[0]
+
+                    # Check if there are at least two previous funding rates
+                    if current_idx >= 2:
+                        prev_two_rates = relevant_df.iloc[current_idx-2:current_idx]['funding rate']
+
+                        # Ensure the previous two funding rates are positive
+                        if (prev_two_rates > 0).all():
+                            # Check if the current funding rate is greater than the entry threshold
+                            if row['funding rate'] > self.entry_threshold:
+                                entry_signal = {
+                                    'exchange': row['exchange'],
+                                    'crypto': row['crypto'],
+                                    'pair': row['pair'],
+                                    'contract': row['contract'],
+                                    'open_price': row['open'],
+                                    'close_price': row['close'],
+                                    'funding_rate': row['funding rate'],
+                                    'time': row['time']
+                                }
+                                entry_signals.append(entry_signal)
 
         return entry_signals
-        
+
     
     def open_positions(self, entry_signal, position_capital) -> None:
         """
@@ -268,6 +211,34 @@ class Strategy:
                 exit_signals.append(exit_signal)
         return exit_signals
     
+    
+    def generate_close_all_signals(self, current_time) -> None:
+        """
+        Generate exit signals for all open positions at the given timestamp.
+        """
+        time_filter = self.df['time'] == current_time
+        perp_filter = self.df['contract'] == 'perpetual'
+        fr_filter = self.df[time_filter & perp_filter]
+        
+        sell_opp = fr_filter[fr_filter['funding rate'] < 999999999]
+        
+        close_signals = []
+        
+        if not sell_opp.empty:
+            for _, row in sell_opp.iterrows():
+                exit_signal = {
+                    'exchange': row['exchange'],
+                    'crypto': row['crypto'],
+                    'pair': row['pair'],
+                    'contract': row['contract'],
+                    'open_price': row['open'],
+                    'close_price': row['close'],
+                    'funding_rate': row['funding rate'],
+                    'time': row['time']
+                }
+                close_signals.append(exit_signal)
+        return close_signals
+    
 
     def close_positions(self, exit_signal) -> None:
         """
@@ -342,10 +313,6 @@ class Strategy:
             df_log = pd.DataFrame(log_data)
             df_log.to_csv(f'./results/{self.output_dir}/{file_name}.csv', index=False)
             print(f"{log_type} saved to './results/{self.output_dir}/{file_name}.csv'.")
-            
-            # if log_type == 'funding_payments':
-            #     total_funding_payments = df_log['funding payment'].sum()
-            #     print(f"Total Funding Payments: {total_funding_payments}")
         else:
             print(f"No {log_type} logged yet.")
             
@@ -359,12 +326,10 @@ class Strategy:
         
         # check initial capital and assign to exchanges
         self.portfolio.assign_initial_capital_to_exchanges()
-        print(self.capital)
         
         
         # loop through all timestamps
-        for current_time in timestamps:
-        # for current_time in timestamps[0:10]:
+        for current_time in timestamps[0:1641]:
             print(current_time)
             
             
@@ -386,6 +351,14 @@ class Strategy:
                 if long_position_size != 0:
                     self.open_positions(signal, long_position_size)
             
+            if self.close_all is True:
+                if current_time == '2024-06-30 17:00:00':
+                    print(f"Closing all positions at 2024-06-30 17:00:00")
+                
+                    # Close all open positions at this timestamp
+                    for signal in self.generate_close_all_signals(current_time):
+                        self.close_positions(signal)
+            
             
             # log the collateral values
             self.portfolio.calculate_collateral_values(current_time)
@@ -396,9 +369,29 @@ class Strategy:
         print(f"Total number of trades opened: {self.portfolio.trade_open_count}")
         print(f"Total number of trades closed: {self.portfolio.trade_close_count}")
 
-        # Save the logs to CSV files
         self.save_logs('trades', 'trades_log')
         self.save_logs('funding_payments', 'funding_log')
         self.save_logs('collateral_values', 'collateral_log')
                 
         print("Backtest completed.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

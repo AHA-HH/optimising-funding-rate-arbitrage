@@ -93,7 +93,7 @@ class Logger:
         Log the performance metrics at a given time.
         """
         self.logs['metrics'].append({
-            'period': period,
+            'time_horizon': period,
             'annualised_return': annualised_return,
             'sharpe_ratio': sharpe_ratio,
             'max_drawdown': max_drawdown,
