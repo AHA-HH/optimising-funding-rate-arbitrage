@@ -4,7 +4,8 @@ class Logger:
         self.logs = {
             'trades': [],  # To log trade data
             'funding_payments': [],  # To log funding rate payments
-            'collateral_values': []  # To log collateral position values over time
+            'collateral_values': [],  # To log collateral position values over time
+            'metrics': []  # To log performance metrics
         }
         
     def log_trade(self, position: Position, action: str):
@@ -27,11 +28,8 @@ class Logger:
                 'open_transaction_cost': position.open_transaction_cost,
                 'open_value': position.open_value,
                 'close_time': None,  # To be updated later
-                # 'close_quantity': None,  # To be updated later
                 'close_price': None,  # To be updated later
                 'closed': False
-                # 'close_transaction_cost': None,  # To be updated later
-                # 'pnl': None,  # To be calculated when the position closes
             })
 
         elif action == 'close':
@@ -51,9 +49,6 @@ class Logger:
                     trade['close_value'] = position.close_value
                     trade['closed'] = True
                     trade['pnl'] = position.pnl
-                    # trade['close_transaction_cost'] = position.close_transaction_cost
-                    # Calculate PnL (example calculation, adjust as needed)
-                    # trade['pnl'] = (position.close_price - position.open_price) * position.quantity - (position.open_transaction_cost + position.close_transaction_cost)
                     break
 
 
@@ -72,7 +67,7 @@ class Logger:
         })
         
         
-    def log_collateral(self, time: str, bin_btc: float, bin_eth: float, bin_liq: float, okx_btc: float, okx_eth: float, okx_liq: float, bybit_btc: float, bybit_eth: float, bybit_liq: float):
+    def log_collateral(self, time: str, bin_btc: float, bin_eth: float, bin_liq: float, okx_btc: float, okx_eth: float, okx_liq: float, bybit_btc: float, bybit_eth: float, bybit_liq: float, bin_fund: float, okx_fund: float, bybit_fund: float):
         """
         Log the collateral values at a given time.
         """
@@ -80,13 +75,30 @@ class Logger:
             'time': time,
             'binance_btc_collateral': bin_btc,
             'binance_eth_collateral': bin_eth,
-            'binance_liquid_cash': bin_liq,            
+            'binance_liquid_cash': bin_liq,          
             'okx_btc_collateral': okx_btc,
             'okx_eth_collateral': okx_eth,
             'okx_liquid_cash': okx_liq,            
             'bybit_btc_collateral': bybit_btc,
             'bybit_eth_collateral': bybit_eth,
             'bybit_liquid_cash': bybit_liq,
+            'binance_funding': bin_fund,
+            'okx_funding': okx_fund,
+            'bybit_funding': bybit_fund
+        })
+        
+        
+    def log_metrics(self, period: str, annualised_return: float, sharpe_ratio: float, max_drawdown: float, sortino_ratio: float, calmar_ratio: float):
+        """
+        Log the performance metrics at a given time.
+        """
+        self.logs['metrics'].append({
+            'period': period,
+            'annualised_return': annualised_return,
+            'sharpe_ratio': sharpe_ratio,
+            'max_drawdown': max_drawdown,
+            'sortino_ratio': sortino_ratio,
+            'calmar_ratio': calmar_ratio
         })
         
 

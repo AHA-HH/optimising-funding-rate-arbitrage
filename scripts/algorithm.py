@@ -24,3 +24,5 @@ strategy.run()
 metrics = Metrics(
     input_dir=output_folder
     )
+
+metrics.run()

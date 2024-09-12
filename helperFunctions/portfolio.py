@@ -50,6 +50,12 @@ class Portfolio:
         self.bybit_btc_collateral = 0
         self.bybit_eth_collateral = 0
         
+        self.binance_funding_payment = 0
+        
+        self.okx_funding_payment = 0
+        
+        self.bybit_funding_payment = 0
+        
         self.logger = Logger()
                 
 
@@ -167,6 +173,12 @@ class Portfolio:
                 # funding_payment = funding_rate * short_position.quantity
                 funding_payment_coin = funding_rate * short_position.quantity
                 funding_payment = funding_payment_coin * short_current_price
+            if short_position.exchange == 'binance':
+                self.binance_funding_payment += funding_payment
+            elif short_position.exchange == 'okx':
+                self.okx_funding_payment += funding_payment
+            elif short_position.exchange == 'bybit':
+                self.bybit_funding_payment += funding_payment
             
         matching_row_long = df[
             (df['time'] == time) & 
@@ -223,6 +235,10 @@ class Portfolio:
         byb_btc = 0 if self.bybit_btc_collateral < 1 else self.bybit_btc_collateral
         byb_eth = 0 if self.bybit_eth_collateral < 1 else self.bybit_eth_collateral
         
+        bin_funding = 0 if self.binance_funding_payment < 1 else self.binance_funding_payment
+        okx_funding = 0 if self.okx_funding_payment < 1 else self.okx_funding_payment
+        byb_funding = 0 if self.bybit_funding_payment < 1 else self.bybit_funding_payment
+        
         self.logger.log_collateral(
             time, 
             bin_btc, 
@@ -233,7 +249,11 @@ class Portfolio:
             okx_liquid, 
             byb_btc, 
             byb_eth, 
-            byb_liquid)
+            byb_liquid,
+            bin_funding,
+            okx_funding,
+            byb_funding
+            )
 
 
     def calculate_portfolio_notional_value(self):
@@ -241,7 +261,13 @@ class Portfolio:
         self.okx_notional = self.okx_liquid_cash + self.okx_btc_collateral + self.okx_eth_collateral
         self.bybit_notional = self.bybit_liquid_cash + self.bybit_btc_collateral + self.bybit_eth_collateral
         self.portfolio_notional = self.binance_notional + self.okx_notional + self.bybit_notional
-        return self.portfolio_notional
+        self.funding_notional = self.binance_funding_payment + self.okx_funding_payment + self.bybit_funding_payment
+        self.overall_notional = self.portfolio_notional + self.funding_notional
+        
+        print(self.portfolio_notional)
+        print(self.funding_notional)
+        print(self.overall_notional)
+        # return self.portfolio_notional
 
 
     def calculate_position_size(self, exchange: str, crypto: str, pair: str):
