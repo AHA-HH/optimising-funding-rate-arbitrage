@@ -451,10 +451,11 @@ class Strategy:
                     # Close all open positions at this timestamp
                     for signal in self.generate_close_all_signals(current_time):
                         self.close_positions(signal)
+                    
             
             
             # log the collateral values
-            self.portfolio.calculate_collateral_values(current_time)
+            self.portfolio.calculate_collateral_values(current_time, self.df)
 
         self.portfolio.calculate_portfolio_notional_value()
         

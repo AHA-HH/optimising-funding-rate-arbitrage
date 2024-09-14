@@ -63,6 +63,10 @@ class Portfolio:
         
         self.bybit_funding_payment = 0
         
+        self.binance_unrealised_pnl = 0
+        self.okx_unrealised_pnl = 0
+        self.bybit_unrealised_pnl = 0
+        
         self.logger = Logger()
                 
 
@@ -232,7 +236,7 @@ class Portfolio:
         return self.binance_liquid_cash, self.okx_liquid_cash, self.bybit_liquid_cash
     
     
-    def calculate_collateral_values(self, time: str):
+    def calculate_collateral_values(self, time: str, df: pd.DataFrame):
         """
         Calculate the current collateral values of the portfolio.
         """
@@ -252,6 +256,31 @@ class Portfolio:
         bin_funding = 0 if self.binance_funding_payment < 1 else self.binance_funding_payment
         okx_funding = 0 if self.okx_funding_payment < 1 else self.okx_funding_payment
         byb_funding = 0 if self.bybit_funding_payment < 1 else self.bybit_funding_payment
+
+        
+        binance_unrealised_pnl = 0
+        okx_unrealised_pnl = 0
+        bybit_unrealised_pnl = 0
+        
+        for position in self.get_open_positions():
+            matching_row = df[
+                (df['time'] == time) & 
+                (df['exchange'] == position.exchange) & 
+                (df['pair'] == position.pair)
+            ]
+            if not matching_row.empty:
+                current_price = matching_row['open'].values[0]
+                if position.position_type == 'long':
+                    unrealised_pnl = (current_price - position.open_price) * position.quantity
+                elif position.position_type == 'short':
+                    unrealised_pnl = (position.open_price - current_price) * position.quantity
+                unrealised_pnl -= position.transaction_cost_pct * position.quantity * current_price
+                if position.exchange == 'binance':
+                    binance_unrealised_pnl += unrealised_pnl
+                elif position.exchange == 'okx':
+                    okx_unrealised_pnl += unrealised_pnl
+                elif position.exchange == 'bybit':
+                    bybit_unrealised_pnl += unrealised_pnl
         
         self.logger.log_collateral(
             time, 
@@ -266,7 +295,10 @@ class Portfolio:
             byb_liquid,
             bin_funding,
             okx_funding,
-            byb_funding
+            byb_funding,
+            binance_unrealised_pnl,
+            okx_unrealised_pnl,
+            bybit_unrealised_pnl
             )
 
 
@@ -398,12 +430,5 @@ class Portfolio:
                     return 0.0005
                 elif margin == "coin":
                     return 0.0005
-
-
-
-
-
-
-
 
 

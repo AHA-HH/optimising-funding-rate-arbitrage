@@ -67,7 +67,25 @@ class Logger:
         })
         
         
-    def log_collateral(self, time: str, bin_btc: float, bin_eth: float, bin_liq: float, okx_btc: float, okx_eth: float, okx_liq: float, bybit_btc: float, bybit_eth: float, bybit_liq: float, bin_fund: float, okx_fund: float, bybit_fund: float):
+    def log_collateral(
+        self, 
+        time: str, 
+        bin_btc: float, 
+        bin_eth: float, 
+        bin_liq: float, 
+        okx_btc: float, 
+        okx_eth: float, 
+        okx_liq: float, 
+        bybit_btc: float, 
+        bybit_eth: float, 
+        bybit_liq: float, 
+        bin_fund: float, 
+        okx_fund: float, 
+        bybit_fund: float,
+        bin_unrealised_pnl: float,
+        okx_unrealised_pnl: float,
+        bybit_unrealised_pnl: float
+    ):
         """
         Log the collateral values at a given time.
         """
@@ -84,7 +102,10 @@ class Logger:
             'bybit_liquid_cash': bybit_liq,
             'binance_funding': bin_fund,
             'okx_funding': okx_fund,
-            'bybit_funding': bybit_fund
+            'bybit_funding': bybit_fund,
+            'binance_unrealised_pnl': bin_unrealised_pnl,
+            'okx_unrealised_pnl': okx_unrealised_pnl,
+            'bybit_unrealised_pnl': bybit_unrealised_pnl
         })
         
         
