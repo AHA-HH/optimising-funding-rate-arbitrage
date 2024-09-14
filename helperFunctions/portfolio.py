@@ -4,11 +4,17 @@ from helperFunctions.position import Position
 from helperFunctions.logging import Logger
 
 class Portfolio:
-    def __init__(self, initial_capital: float = 0, binance_pct: float = 0.6, okx_pct: float = 0.2, bybit_pct: float = 0.2) -> None:
+    def __init__(self, initial_capital: float = 0, binance_pct: float = 0.6, okx_pct: float = 0.2, bybit_pct: float = 0.2, reinvest: bool = False) -> None:
         self.positions = []  # List to hold all positions
         self.trade_count = 0  # Total number of trades
         self.trade_open_count = 0  # Number of open trades
         self.trade_close_count = 0  # Number of closed trades
+        
+        self.initial_capital = initial_capital
+        self.binance_pct = binance_pct
+        self.okx_pct = okx_pct
+        self.bybit_pct = bybit_pct
+        self.reinvest = reinvest
         
         
         # Set weight ranges for portfolio allocation
@@ -34,10 +40,7 @@ class Portfolio:
             'ethereum': {'min': 0.0, 'max': 0.45}
         }
         
-        self.initial_capital = initial_capital
-        self.binance_pct = binance_pct
-        self.okx_pct = okx_pct
-        self.bybit_pct = bybit_pct
+
         
         self.binance_liquid_cash = 0
         
@@ -174,15 +177,23 @@ class Portfolio:
             if short_position.margin == 'usd':
                 funding_payment = funding_rate * nominal_position_value
             elif short_position.margin == 'coin':
-                # funding_payment = funding_rate * short_position.quantity
                 funding_payment_coin = funding_rate * short_position.quantity
                 funding_payment = funding_payment_coin * short_current_price
-            if short_position.exchange == 'binance':
-                self.binance_funding_payment += funding_payment
-            elif short_position.exchange == 'okx':
-                self.okx_funding_payment += funding_payment
-            elif short_position.exchange == 'bybit':
-                self.bybit_funding_payment += funding_payment
+                
+            if self.reinvest == False:
+                if short_position.exchange == 'binance':
+                    self.binance_funding_payment += funding_payment
+                elif short_position.exchange == 'okx':
+                    self.okx_funding_payment += funding_payment
+                elif short_position.exchange == 'bybit':
+                    self.bybit_funding_payment += funding_payment
+            elif self.reinvest == True:
+                if short_position.exchange == 'binance':
+                    self.binance_liquid_cash += funding_payment
+                elif short_position.exchange == 'okx':
+                    self.okx_liquid_cash += funding_payment
+                elif short_position.exchange == 'bybit':
+                    self.bybit_liquid_cash += funding_payment
             
         matching_row_long = df[
             (df['time'] == time) & 
@@ -202,7 +213,6 @@ class Portfolio:
         new_delta = new_notional_long - new_notional_short
         
         self.logger.log_funding_payment_and_pnl(time, short_position, funding_payment, pnl, old_delta, new_delta)
-        # self.binance_liquid_cash += funding_payment
         return funding_payment, pnl, old_delta, new_delta
     
     

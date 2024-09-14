@@ -99,4 +99,29 @@ merged_df.to_csv(f'./data/all_exchanges.csv', index=True)
 
 print(f'Data saved to ./data/all_exchanges.csv')
 
-print("All data saved and ready for use")
+print("All exchange data saved and ready for use")
+
+# Risk-free Rate for Metrics Calculation
+
+# rf_df = pd.read_excel('./data/raw/Search.xlsx')
+
+# # Create a new DataFrame with only the transformed Date and Rate columns
+# new_df = pd.DataFrame()
+# new_df['date'] = pd.to_datetime(rf_df['Effective Date'])
+# new_df['rate'] = rf_df['Rate (%)'] / 100
+
+# # Sort the DataFrame by date in ascending order
+# new_df = new_df.sort_values('date')
+
+# # Create a date range that covers all dates between the min and max date in the data
+# all_dates = pd.date_range(start=new_df['date'].min(), end=new_df['date'].max())
+
+# # Reindex the DataFrame to include all dates, forward fill the missing rates
+# new_df = new_df.set_index('date').reindex(all_dates).fillna(method='ffill')
+
+# # Reset the index and rename the index column back to 'Effective Date'
+# new_df = new_df.rename_axis('date').reset_index()
+
+# new_df.to_csv('./data/processed/risk_free_rate.csv', index=False)
+
+# print("Risk-free rate saved and ready for use")

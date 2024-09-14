@@ -21,6 +21,7 @@ class Strategy:
         bybit_pct: float,
         output_dir: str,
         threshold_logic: str = 'simple',
+        reinvest_logic: bool = False,
         close_all: bool = False
 
     ) -> None:
@@ -34,10 +35,11 @@ class Strategy:
         self.bybit_pct = bybit_pct
         self.output_dir = output_dir
         self.threshold_logic = threshold_logic
+        self.reinvest_logic = reinvest_logic
         self.close_all = close_all
         
         self.df = pd.read_csv(filepath)
-        self.portfolio = Portfolio(initial_capital=capital, binance_pct=binance_pct, okx_pct=okx_pct, bybit_pct=bybit_pct)
+        self.portfolio = Portfolio(initial_capital=capital, binance_pct=binance_pct, okx_pct=okx_pct, bybit_pct=bybit_pct, reinvest=reinvest_logic)
         
         results_folder = f'./results/{output_dir}'
         
@@ -56,7 +58,22 @@ class Strategy:
         buy_opp = fr_filter[fr_filter['funding rate'] > self.entry_threshold]
         
         entry_signals = []
-        if self.threshold_logic == 'simple':
+        
+        if self.threshold_logic == 'hold':
+            for _, row in fr_filter.iterrows():
+                entry_signal = {
+                    'exchange': row['exchange'],
+                    'crypto': row['crypto'],
+                    'pair': row['pair'],
+                    'contract': row['contract'],
+                    'open_price': row['open'],
+                    'close_price': row['close'],
+                    'funding_rate': row['funding rate'],
+                    'time': row['time']
+                }
+                entry_signals.append(entry_signal)
+        
+        elif self.threshold_logic == 'simple':
             if not buy_opp.empty:
                 for _, row in buy_opp.iterrows():
                     entry_signal = {
@@ -70,37 +87,48 @@ class Strategy:
                         'time': row['time']
                     }
                     entry_signals.append(entry_signal)
-                    
         elif self.threshold_logic == 'complex':
             if not fr_filter.empty:
                 for _, row in fr_filter.iterrows():
-                    # Get the previous two funding rates for the same pair and exchange
+                    # Get the previous funding rates for the same pair and exchange
                     pair_filter = self.df['pair'] == row['pair']
                     exchange_filter = self.df['exchange'] == row['exchange']
 
-                    # Sort the dataframe by time and get the previous two funding rates
+                    # Sort the dataframe by time and get the relevant previous funding rates
                     relevant_df = self.df[pair_filter & exchange_filter & perp_filter].sort_values(by='time')
                     current_idx = relevant_df[relevant_df['time'] == current_time].index[0]
 
-                    # Check if there are at least two previous funding rates
-                    if current_idx >= 2:
-                        prev_two_rates = relevant_df.iloc[current_idx-2:current_idx]['funding rate']
+                    # For OKX, check the previous twelve funding rates must be positive
+                    if row['exchange'] == 'okx':
+                        if current_idx >= 9:  # Ensure at least twelve previous rates exist
+                            prev_twelve_rates = relevant_df.iloc[current_idx-9:current_idx]['funding rate']
 
-                        # Ensure the previous two funding rates are positive
-                        if (prev_two_rates > 0).all():
-                            # Check if the current funding rate is greater than the entry threshold
-                            if row['funding rate'] > self.entry_threshold:
-                                entry_signal = {
-                                    'exchange': row['exchange'],
-                                    'crypto': row['crypto'],
-                                    'pair': row['pair'],
-                                    'contract': row['contract'],
-                                    'open_price': row['open'],
-                                    'close_price': row['close'],
-                                    'funding_rate': row['funding rate'],
-                                    'time': row['time']
-                                }
-                                entry_signals.append(entry_signal)
+                            # Ensure the previous twelve funding rates are positive
+                            if not (prev_twelve_rates > 0).all():
+                                continue  # Skip this row if the previous 12 rates aren't all positive
+
+                    # For other exchanges, check the previous two funding rates must be positive
+                    else:
+                        if current_idx >= 3:  # Ensure at least two previous rates exist
+                            prev_two_rates = relevant_df.iloc[current_idx-3:current_idx]['funding rate']
+
+                            # Ensure the previous two funding rates are positive
+                            if not (prev_two_rates > 0).all():
+                                continue  # Skip this row if the previous 2 rates aren't all positive
+
+                    # Check if the current funding rate is greater than the entry threshold
+                    if row['funding rate'] > self.entry_threshold:
+                        entry_signal = {
+                            'exchange': row['exchange'],
+                            'crypto': row['crypto'],
+                            'pair': row['pair'],
+                            'contract': row['contract'],
+                            'open_price': row['open'],
+                            'close_price': row['close'],
+                            'funding_rate': row['funding rate'],
+                            'time': row['time']
+                        }
+                        entry_signals.append(entry_signal)
 
         return entry_signals
 
@@ -188,6 +216,9 @@ class Strategy:
         """
         Identify sell opportunity based on the funding rate.
         """
+        if self.threshold_logic == 'hold':
+            return []
+        
         time_filter = self.df['time'] == current_time
         perp_filter = self.df['contract'] == 'perpetual'
         fr_filter = self.df[time_filter & perp_filter]
@@ -249,6 +280,7 @@ class Strategy:
         crypto = exit_signal['crypto']
         close_price = exit_signal['open_price']
         future_pair = exit_signal['pair']
+        current_date = pd.to_datetime(time).date()
         
         pnl_short = None
         pnl_long = None
@@ -260,47 +292,108 @@ class Strategy:
         else:
             raise ValueError("Invalid future pair.")
         
-        close_short_position = self.portfolio.find_open_position(crypto, future_pair, exchange, 'short', margin)
-        
-        if close_short_position is not None:
-            self.portfolio.close_position(close_short_position, close_price, time)
-            pnl_short = close_short_position.pnl
+        if self.threshold_logic == 'simple':
+            close_short_position = self.portfolio.find_open_position(crypto, future_pair, exchange, 'short', margin)
             
-        spot_filter = self.df[(self.df['time'] == time) & (self.df['contract'] == 'spot') & (self.df['exchange'] == exchange) & (self.df['crypto'] == crypto)]
-        spot_pair = spot_filter['pair'].values[0]
-        spot_market = spot_filter['contract'].values[0]
-        spot_price = spot_filter['open'].values[0]
-        
-        close_long_position = self.portfolio.find_open_position(crypto, spot_pair, exchange, 'long', margin)
-        
-        if close_long_position is not None:
-            self.portfolio.close_position(close_long_position, spot_price, time)
-            pnl_long = close_long_position.pnl
-            capital_used = close_long_position.position_size
+            if close_short_position is not None:
+                self.portfolio.close_position(close_short_position, close_price, time)
+                pnl_short = close_short_position.pnl
+                
+            spot_filter = self.df[(self.df['time'] == time) & (self.df['contract'] == 'spot') & (self.df['exchange'] == exchange) & (self.df['crypto'] == crypto)]
+            spot_pair = spot_filter['pair'].values[0]
+            spot_market = spot_filter['contract'].values[0]
+            spot_price = spot_filter['open'].values[0]
             
-        if pnl_long is not None and pnl_short is not None:          
-            net_pnl = pnl_long + pnl_short
+            close_long_position = self.portfolio.find_open_position(crypto, spot_pair, exchange, 'long', margin)
             
-            if exchange == 'binance':
-                self.portfolio.binance_liquid_cash += capital_used + net_pnl
-                if crypto == 'bitcoin':
-                    self.portfolio.binance_btc_collateral -= capital_used
-                elif crypto == 'ethereum':
-                    self.portfolio.binance_eth_collateral -= capital_used
+            if close_long_position is not None:
+                self.portfolio.close_position(close_long_position, spot_price, time)
+                pnl_long = close_long_position.pnl
+                capital_used = close_long_position.position_size
+                
+            if pnl_long is not None and pnl_short is not None:          
+                net_pnl = pnl_long + pnl_short
+                
+                if exchange == 'binance':
+                    self.portfolio.binance_liquid_cash += capital_used + net_pnl
+                    if crypto == 'bitcoin':
+                        self.portfolio.binance_btc_collateral -= capital_used
+                    elif crypto == 'ethereum':
+                        self.portfolio.binance_eth_collateral -= capital_used
 
-            elif exchange == 'okx':
-                self.portfolio.okx_liquid_cash += capital_used + net_pnl
-                if crypto == 'bitcoin':
-                    self.portfolio.okx_btc_collateral -= capital_used
-                elif crypto == 'ethereum':
-                    self.portfolio.okx_eth_collateral -= capital_used
+                elif exchange == 'okx':
+                    self.portfolio.okx_liquid_cash += capital_used + net_pnl
+                    if crypto == 'bitcoin':
+                        self.portfolio.okx_btc_collateral -= capital_used
+                    elif crypto == 'ethereum':
+                        self.portfolio.okx_eth_collateral -= capital_used
 
-            elif exchange == 'bybit':
-                self.portfolio.bybit_liquid_cash += capital_used + net_pnl
-                if crypto == 'bitcoin':
-                    self.portfolio.bybit_btc_collateral -= capital_used
-                elif crypto == 'ethereum':
-                    self.portfolio.bybit_eth_collateral -= capital_used
+                elif exchange == 'bybit':
+                    self.portfolio.bybit_liquid_cash += capital_used + net_pnl
+                    if crypto == 'bitcoin':
+                        self.portfolio.bybit_btc_collateral -= capital_used
+                    elif crypto == 'ethereum':
+                        self.portfolio.bybit_eth_collateral -= capital_used
+        elif self.threshold_logic == 'complex':
+            close_short_position = self.portfolio.find_open_position(crypto, future_pair, exchange, 'short', margin)
+            
+            # Determine the cooldown period
+            if exchange == 'okx':
+                cooldown_period = pd.Timedelta(days=3) 
+            else:
+                cooldown_period = pd.Timedelta(days=1)
+
+            current_time = pd.to_datetime(time)
+
+            if close_short_position is not None:
+                # Convert open_time to datetime for comparison
+                open_time = pd.to_datetime(close_short_position.open_time)
+                if (current_time - open_time) > cooldown_period:
+                    # Only close the position if it has been open for longer than the cooldown period
+                    self.portfolio.close_position(close_short_position, close_price, time)
+                    pnl_short = close_short_position.pnl
+
+            spot_filter = self.df[(self.df['time'] == time) & (self.df['contract'] == 'spot') & 
+                                (self.df['exchange'] == exchange) & (self.df['crypto'] == crypto)]
+            spot_pair = spot_filter['pair'].values[0]
+            spot_market = spot_filter['contract'].values[0]
+            spot_price = spot_filter['open'].values[0]
+
+            close_long_position = self.portfolio.find_open_position(crypto, spot_pair, exchange, 'long', margin)
+
+            if close_long_position is not None:
+                # Convert open_time to datetime for comparison
+                open_time = pd.to_datetime(close_long_position.open_time)
+                if (current_time - open_time) > cooldown_period:
+                    # Only close the position if it has been open for longer than the cooldown period
+                    self.portfolio.close_position(close_long_position, spot_price, time)
+                    pnl_long = close_long_position.pnl
+                    capital_used = close_long_position.position_size
+
+            if pnl_long is not None and pnl_short is not None:
+                net_pnl = pnl_long + pnl_short
+
+                if exchange == 'binance':
+                    self.portfolio.binance_liquid_cash += capital_used + net_pnl
+                    if crypto == 'bitcoin':
+                        self.portfolio.binance_btc_collateral -= capital_used
+                    elif crypto == 'ethereum':
+                        self.portfolio.binance_eth_collateral -= capital_used
+
+                elif exchange == 'okx':
+                    self.portfolio.okx_liquid_cash += capital_used + net_pnl
+                    if crypto == 'bitcoin':
+                        self.portfolio.okx_btc_collateral -= capital_used
+                    elif crypto == 'ethereum':
+                        self.portfolio.okx_eth_collateral -= capital_used
+
+                elif exchange == 'bybit':
+                    self.portfolio.bybit_liquid_cash += capital_used + net_pnl
+                    if crypto == 'bitcoin':
+                        self.portfolio.bybit_btc_collateral -= capital_used
+                    elif crypto == 'ethereum':
+                        self.portfolio.bybit_eth_collateral -= capital_used
+
 
 
     def save_logs(self, log_type: str, file_name: str) -> None:
