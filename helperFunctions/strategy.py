@@ -422,7 +422,8 @@ class Strategy:
         
         
         # loop through all timestamps
-        for current_time in timestamps[0:1641]:
+        # for current_time in timestamps[0:1641]:
+        for current_time in timestamps:
             print(current_time)
             
             

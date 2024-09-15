@@ -141,7 +141,7 @@ class Metrics:
         return max_drawdown
     
     
-    def run(self):
+    def calculate(self):
         """
         Run the metrics calculation.
         """

@@ -16,7 +16,3 @@ comparison.py
 /analysis/
 /data/
 /results/
-
-# git rm --cached test.py
-# git add .gitignore
-# git commit -m "Ignore test.py"

@@ -12,8 +12,9 @@ capital = 10000000
 binance_pct = 0.6
 okx_pct = 0.2
 bybit_pct = 0.2
-output_folder = 'simple_threshold_open'
-threshold_logic = 'simple'
+output_folder = 'simple_hold_open_test'
+threshold_logic = 'hold'
+reinvest = False
 close_positions = False
 
 strategy = Strategy(
@@ -26,6 +27,7 @@ strategy = Strategy(
     bybit_pct=bybit_pct,
     output_dir=output_folder,
     threshold_logic=threshold_logic,
+    reinvest_logic=reinvest,
     close_all=close_positions
     )
 
@@ -35,4 +37,4 @@ metrics = Metrics(
     input_dir=output_folder
     )
 
-metrics.run()
+metrics.calculate()
