@@ -10,10 +10,11 @@ class Metrics:
     def __init__(
         self,
         input_dir: str,
-        
+        strategy_type: str,
     ) -> None:
         
         self.input_dir = input_dir
+        self.strategy_type = strategy_type
         
         self.collateral_log = pd.read_csv(f'./results/{self.input_dir}/collateral_log.csv')
         self.funding_log = pd.read_csv(f'./results/{self.input_dir}/funding_log.csv')
@@ -141,6 +142,72 @@ class Metrics:
         return max_drawdown
     
     
+    def calculate_avg_perp_yield(self):
+        trades_data = self.trades_log.copy()
+        short_positions = trades_data[trades_data['position_type'] == 'short']
+        
+        funding_data = self.funding_log.copy()
+        funding_data['date'] = pd.to_datetime(funding_data['time']).dt.date
+        funding_data = funding_data.sort_values(by='date')
+        
+        daily_funding_payments = funding_data.groupby(['date', 'exchange', 'pair'])['funding payment'].sum().reset_index()
+        
+        for current_date in daily_funding_payments['date'].unique():
+            daily_binance_btc = 0
+            daily_binance_eth = 0
+            daily_bybit_btc = 0
+            daily_bybit_eth = 0
+            daily_okx_btc = 0
+            daily_okx_eth = 0
+
+            daily_funding = daily_funding_payments[daily_funding_payments['date'] == current_date]
+
+            for _, row in daily_funding.iterrows():
+                exchange = row['exchange']
+                pair = row['pair']
+                funding_payment = row['funding payment']
+
+                if self.strategy_type == 'hold':
+                    matching_short_positions = short_positions[
+                        (short_positions['exchange'] == exchange) &
+                        (short_positions['pair'] == pair) &
+                        (pd.to_datetime(short_positions['open_time']).dt.date <= current_date) &
+                        (short_positions['closed'] == False)
+                    ]
+                else:
+                    matching_short_positions = short_positions[
+                        (short_positions['exchange'] == exchange) &
+                        (short_positions['pair'] == pair) &
+                        (pd.to_datetime(short_positions['open_time']).dt.date <= current_date) &
+                        (
+                            (short_positions['closed'] == False) | 
+                            (pd.to_datetime(short_positions['close_time']).dt.date >= current_date) 
+                        )
+                    ]
+
+                total_volume = matching_short_positions['open_value'].sum()
+
+                funding_yield = (funding_payment / total_volume) * 100
+                
+                if exchange == 'binance':
+                    if pair == 'BTCUSDT' or pair == 'BTCUSDCM':
+                        daily_binance_btc += funding_yield
+                    elif pair == 'ETHUSDT' or pair == 'ETHUSDCM':
+                        daily_binance_eth += funding_yield
+                elif exchange == 'bybit':
+                    if pair == 'BTCUSDT' or pair == 'BTCUSDCM':
+                        daily_bybit_btc += funding_yield
+                    elif pair == 'ETHUSDT' or pair == 'ETHUSDCM':
+                        daily_bybit_eth += funding_yield
+                elif exchange == 'okx':
+                    if pair == 'BTCUSDT' or pair == 'BTCUSDCM':
+                        daily_okx_btc += funding_yield
+                    elif pair == 'ETHUSDT' or pair == 'ETHUSDCM':
+                        daily_okx_eth += funding_yield
+
+            self.logger.log_yield(current_date, daily_binance_btc, daily_binance_eth, daily_bybit_btc, daily_bybit_eth, daily_okx_btc, daily_okx_eth)
+
+    
     def calculate(self):
         """
         Run the metrics calculation.
@@ -153,14 +220,25 @@ class Metrics:
 
             self.calculate_metrics(period=period_name, start_time=start_time, end_time=end_time, number_of_days=number_of_days)
 
-        log_data = self.logger.get_logs(log_type='metrics')
+        metric_log = self.logger.get_logs(log_type='metrics')
         
-        if log_data:
-            df_log = pd.DataFrame(log_data)
-            df_log.to_csv(f'./results/{self.input_dir}/metrics.csv', index=False)
+        if metric_log:
+            df_metric = pd.DataFrame(metric_log)
+            df_metric.to_csv(f'./results/{self.input_dir}/metrics.csv', index=False)
             print(f"metrics saved to './results/{self.input_dir}/metrics.csv'.")
         else:
             print(f"No metrics logged yet.")
+        
+        self.calculate_avg_perp_yield()
+        
+        yield_log = self.logger.get_logs(log_type='yield')
+        
+        if yield_log:
+            df_yield = pd.DataFrame(yield_log)
+            df_yield.to_csv(f'./results/{self.input_dir}/yield.csv', index=False)
+            print(f"yield saved to './results/{self.input_dir}/yield.csv'.")
+        else:
+            print(f"No yield logged yet.")
             
             
             

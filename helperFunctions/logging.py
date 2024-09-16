@@ -5,7 +5,8 @@ class Logger:
             'trades': [],  # To log trade data
             'funding_payments': [],  # To log funding rate payments
             'collateral_values': [],  # To log collateral position values over time
-            'metrics': []  # To log performance metrics
+            'metrics': [],  # To log performance metrics
+            'yield': []  # To log average yield
         }
         
     def log_trade(self, position: Position, action: str):
@@ -120,6 +121,21 @@ class Logger:
             'max_drawdown': max_drawdown,
             'sortino_ratio': sortino_ratio,
             'calmar_ratio': calmar_ratio
+        })
+        
+    
+    def log_yield(self, date: str, bin_btc: float, bin_eth: float, bybit_btc: float, bybit_eth: float, okx_btc: float, okx_eth: float):
+        """
+        Log the average yield at a given time.
+        """
+        self.logs['yield'].append({
+            'date': date,
+            'binance_btc_yield': bin_btc,
+            'binance_eth_yield': bin_eth,
+            'bybit_btc_yield': bybit_btc,
+            'bybit_eth_yield': bybit_eth,
+            'okx_btc_yield': okx_btc,
+            'okx_eth_yield': okx_eth
         })
         
 
