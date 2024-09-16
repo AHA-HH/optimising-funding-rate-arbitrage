@@ -136,13 +136,15 @@ class Plotter:
             template='plotly_white',
             hovermode='x unified',
             legend=dict(
-                x=1.05,
-                y=1,
-                xanchor='left',
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
                 yanchor='top'
             ),
             width=800,
-            height=600
+            height=600,
+            margin=dict(l=40, r=40, t=80, b=40), 
         )
 
         fig.update_xaxes(
@@ -154,12 +156,13 @@ class Plotter:
             dtick='M3'
         )
 
-        fig.write_image(f'./results/{self.input_dir}/cumulative_pnl_plot.png')
+        fig.write_image(f'./results/{self.input_dir}/cumulative_pnl.png')
 
-        print(f"Plot saved to ./results/{self.input_dir}/cumulative_pnl_plot.png")
+        print(f"Plot saved to ./results/{self.input_dir}/cumulative_pnl.png")
 
 
     def plot_portfolio_over_time(self):
+        ROLLING_WINDOW_DAYS = 30
         collateral_log = self.collateral_log.copy()
 
         collateral_log['time'] = pd.to_datetime(collateral_log['time'])
@@ -196,7 +199,7 @@ class Plotter:
             collateral_log['bybit_total']
         )
 
-        rolling_window = 30
+        rolling_window = f'{ROLLING_WINDOW_DAYS}D'
         collateral_log['portfolio_total'] = collateral_log['portfolio_total'].rolling(window=rolling_window).mean()
 
         for exchange in ['binance', 'bybit', 'okx']:
@@ -205,6 +208,7 @@ class Plotter:
             collateral_log[f'{exchange}_cash_pct'] = collateral_log[f'{exchange}_liquid_cash'].rolling(window=rolling_window).mean() / collateral_log['portfolio_total']
             collateral_log[f'{exchange}_funding_pct'] = collateral_log[f'{exchange}_funding_value'].rolling(window=rolling_window).mean() / collateral_log['portfolio_total']
 
+        
         fig = go.Figure()
 
         exchange_shades = {
@@ -218,6 +222,12 @@ class Plotter:
             'bybit': {'cash': 'Bybit Liquid', 'btc': 'Bybit BTC', 'eth': 'Bybit ETH', 'funding': 'Bybit Funding'},
             'okx': {'cash': 'OKX Liquid', 'btc': 'OKX BTC', 'eth': 'OKX ETH', 'funding': 'OKX Funding'},
         }
+        
+        legend_ranks = {
+            'binance': 1,
+            'bybit': 2,
+            'okx': 3
+        }
 
         asset_types = ['cash', 'btc', 'eth', 'funding']
         for asset_type in asset_types:
@@ -227,8 +237,9 @@ class Plotter:
                     y=collateral_log[f'{exchange}_{asset_type}_pct'] * 100,
                     mode='lines',
                     stackgroup='one',
-                    name=custom_names[exchange][asset_type],  # Use the custom name here
-                    line=dict(color=exchange_shades[exchange][asset_type]) 
+                    name=custom_names[exchange][asset_type],
+                    line=dict(color=exchange_shades[exchange][asset_type]),
+                    legendrank=legend_ranks[exchange]
                 ))
 
         fig.update_layout(
@@ -239,14 +250,97 @@ class Plotter:
             yaxis=dict(tickformat='.0f', range=[0, 100]),
             hovermode='x unified',
             width=800,
-            height=600
+            height=600,
+            margin=dict(l=40, r=40, t=80, b=40), 
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            )
         )
 
-        fig.write_image(f'./results/{self.input_dir}/portfolio_weighting_plot.png')
+        fig.write_image(f'./results/{self.input_dir}/portfolio_weighting.png')
 
-        print(f"Plot saved to ./results/{self.input_dir}/portfolio_weighting_plot.png")
+        print(f"Plot saved to ./results/{self.input_dir}/portfolio_weighting.png")
+        
+        
+    def plot_trading_volume(self):
+            trades_df = self.trades_log.copy()
+
+            trades_df['open_time'] = pd.to_datetime(trades_df['open_time'])
+            trades_df['close_time'] = pd.to_datetime(trades_df['close_time'])
+
+            trades_df['open_date'] = trades_df['open_time'].dt.date
+            trades_df['close_date'] = trades_df['close_time'].dt.date
+
+            trades_opened_per_day = trades_df['open_date'].value_counts().sort_index()
+            trades_closed_per_day = trades_df['close_date'].value_counts().sort_index()
+
+            trades_counts = pd.DataFrame({
+                'date': pd.to_datetime(trades_opened_per_day.index),
+                'trades_opened': trades_opened_per_day.values,
+                'trades_closed': -trades_closed_per_day.reindex(trades_opened_per_day.index, fill_value=0).values
+            })
+
+            fig = go.Figure()
+
+            fig.add_trace(go.Bar(
+                x=trades_counts['date'],
+                y=trades_counts['trades_opened'],
+                name='Position Opened',
+                marker_color='green',
+                opacity=1.0
+            ))
+
+            fig.add_trace(go.Bar(
+                x=trades_counts['date'],
+                y=trades_counts['trades_closed'],
+                name='Position Closed',
+                marker_color='red',
+                opacity=1.0
+            ))
+
+            fig.add_shape(
+                type="line",
+                x0=trades_counts['date'].min(), x1=trades_counts['date'].max(),
+                y0=0, y1=0,
+                line=dict(color="black", width=1)
+            )
+
+            fig.update_layout(
+                title=f'{self.plot_name} - Trading Volume',
+                yaxis_title='Number of Trades',
+                barmode='relative',
+                template='plotly_white',
+                width=800,
+                height=600,
+                margin=dict(l=40, r=40, t=80, b=40), 
+                legend=dict(
+                    orientation='h',
+                    x=0.5,
+                    y=-0.2,
+                    xanchor='center',
+                    yanchor='top'
+                )
+            )
+
+            fig.update_xaxes(
+                tickformat='%b %Y',
+                tickangle=0,
+                showgrid=True,
+                zeroline=True,
+                showticklabels=True,
+                dtick='M3'
+            )
+
+            fig.write_image(f'./results/{self.input_dir}/trading_volume.png')
+
+            print(f"Plot saved to ./results/{self.input_dir}/trading_volume.png")
 
 
     def visualise(self):
         self.plot_pnl_over_time()
         self.plot_portfolio_over_time()
+        self.plot_trading_volume()
