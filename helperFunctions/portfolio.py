@@ -40,8 +40,6 @@ class Portfolio:
             'ethereum': {'min': 0.0, 'max': 0.45}
         }
         
-
-        
         self.binance_liquid_cash = 0
         
         self.okx_liquid_cash = 0 
