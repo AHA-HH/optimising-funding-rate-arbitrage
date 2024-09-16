@@ -153,12 +153,31 @@ class Metrics:
         daily_funding_payments = funding_data.groupby(['date', 'exchange', 'pair'])['funding payment'].sum().reset_index()
         
         for current_date in daily_funding_payments['date'].unique():
+            daily_binance_btcusd = 0
+            daily_binance_btccm = 0
             daily_binance_btc = 0
+            daily_binance_ethusd = 0
+            daily_binance_ethcm = 0
             daily_binance_eth = 0
+            daily_binance = 0
+
+            daily_bybit_btcusd = 0
+            daily_bybit_btccm = 0
             daily_bybit_btc = 0
+            daily_bybit_ethusd = 0
+            daily_bybit_ethcm = 0
             daily_bybit_eth = 0
+            daily_bybit = 0
+
+            daily_okx_btcusd = 0
+            daily_okx_btccm = 0
             daily_okx_btc = 0
+            daily_okx_ethusd = 0
+            daily_okx_ethcm = 0
             daily_okx_eth = 0
+            daily_okx = 0
+            
+            daily_total = 0
 
             daily_funding = daily_funding_payments[daily_funding_payments['date'] == current_date]
 
@@ -188,24 +207,98 @@ class Metrics:
                 total_volume = matching_short_positions['open_value'].sum()
 
                 funding_yield = (funding_payment / total_volume) * 100
-                
+                         
                 if exchange == 'binance':
-                    if pair == 'BTCUSDT' or pair == 'BTCUSDCM':
+                    if pair == 'BTCUSDT':
+                        daily_binance_btcusd += funding_yield
                         daily_binance_btc += funding_yield
-                    elif pair == 'ETHUSDT' or pair == 'ETHUSDCM':
+                        daily_binance += funding_yield
+                        daily_total += funding_yield
+                    elif pair == 'BTCUSDCM':
+                        daily_binance_btccm += funding_yield
+                        daily_binance_btc += funding_yield
+                        daily_binance += funding_yield
+                        daily_total += funding_yield
+                    elif pair == 'ETHUSDT':
+                        daily_binance_ethusd += funding_yield
                         daily_binance_eth += funding_yield
+                        daily_binance += funding_yield
+                        daily_total += funding_yield
+                    elif pair == 'ETHUSDCM':
+                        daily_binance_ethcm += funding_yield
+                        daily_binance_eth += funding_yield
+                        daily_binance += funding_yield
+                        daily_total += funding_yield
+                        
                 elif exchange == 'bybit':
-                    if pair == 'BTCUSDT' or pair == 'BTCUSDCM':
+                    if pair == 'BTCUSDT':
+                        daily_bybit_btcusd += funding_yield
                         daily_bybit_btc += funding_yield
-                    elif pair == 'ETHUSDT' or pair == 'ETHUSDCM':
+                        daily_bybit += funding_yield
+                        daily_total += funding_yield
+                    elif pair == 'BTCUSDCM':
+                        daily_bybit_btccm += funding_yield
+                        daily_bybit_btc += funding_yield
+                        daily_bybit += funding_yield
+                        daily_total += funding_yield
+                    elif pair == 'ETHUSDT':
+                        daily_bybit_ethusd += funding_yield
                         daily_bybit_eth += funding_yield
-                elif exchange == 'okx':
-                    if pair == 'BTCUSDT' or pair == 'BTCUSDCM':
-                        daily_okx_btc += funding_yield
-                    elif pair == 'ETHUSDT' or pair == 'ETHUSDCM':
-                        daily_okx_eth += funding_yield
+                        daily_bybit += funding_yield
+                        daily_total += funding_yield
+                    elif pair == 'ETHUSDCM':
+                        daily_bybit_ethcm += funding_yield
+                        daily_bybit_eth += funding_yield
+                        daily_bybit += funding_yield
+                        daily_total += funding_yield
 
-            self.logger.log_yield(current_date, daily_binance_btc, daily_binance_eth, daily_bybit_btc, daily_bybit_eth, daily_okx_btc, daily_okx_eth)
+                elif exchange == 'okx':
+                    if pair == 'BTCUSDT':
+                        daily_okx_btcusd += funding_yield
+                        daily_okx_btc += funding_yield
+                        daily_okx += funding_yield
+                        daily_total += funding_yield
+                    elif pair == 'BTCUSDCM':
+                        daily_okx_btccm += funding_yield
+                        daily_okx_btc += funding_yield
+                        daily_okx += funding_yield
+                        daily_total += funding_yield
+                    elif pair == 'ETHUSDT':
+                        daily_okx_ethusd += funding_yield
+                        daily_okx_eth += funding_yield
+                        daily_okx += funding_yield
+                        daily_total += funding_yield
+                    elif pair == 'ETHUSDCM':
+                        daily_okx_ethcm += funding_yield
+                        daily_okx_eth += funding_yield
+                        daily_okx += funding_yield
+                        daily_total += funding_yield
+
+            self.logger.log_yield(
+                current_date,
+                daily_binance_btcusd,
+                daily_binance_btccm,
+                daily_binance_ethusd,
+                daily_binance_ethcm,
+                daily_bybit_btcusd,
+                daily_bybit_btccm,
+                daily_bybit_ethusd,
+                daily_bybit_ethcm,
+                daily_okx_btcusd,
+                daily_okx_btccm,
+                daily_okx_ethusd,
+                daily_okx_ethcm,
+                daily_binance_btc, 
+                daily_binance_eth, 
+                daily_bybit_btc, 
+                daily_bybit_eth, 
+                daily_okx_btc, 
+                daily_okx_eth,
+                daily_binance,
+                daily_bybit,
+                daily_okx,
+                daily_total
+                )
 
     
     def calculate(self):

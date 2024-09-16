@@ -160,8 +160,6 @@ class Plotter:
 
 
     def plot_portfolio_over_time(self):
-        ROLLING_WINDOW_DAYS = 30
-
         collateral_log = self.collateral_log.copy()
 
         collateral_log['time'] = pd.to_datetime(collateral_log['time'])
@@ -198,7 +196,7 @@ class Plotter:
             collateral_log['bybit_total']
         )
 
-        rolling_window = f'{ROLLING_WINDOW_DAYS}D'
+        rolling_window = 30
         collateral_log['portfolio_total'] = collateral_log['portfolio_total'].rolling(window=rolling_window).mean()
 
         for exchange in ['binance', 'bybit', 'okx']:
@@ -215,7 +213,6 @@ class Plotter:
             'okx': {'cash': 'rgba(31, 119, 180, 0.4)', 'btc': 'rgba(255, 127, 14, 0.4)', 'eth': 'rgba(44, 160, 44, 0.4)', 'funding': 'rgba(214, 39, 40, 0.4)'},
         }
 
-        # Define custom names for each exchange and asset type
         custom_names = {
             'binance': {'cash': 'Binance Liquid', 'btc': 'Binance BTC', 'eth': 'Binance ETH', 'funding': 'Binance Funding'},
             'bybit': {'cash': 'Bybit Liquid', 'btc': 'Bybit BTC', 'eth': 'Bybit ETH', 'funding': 'Bybit Funding'},

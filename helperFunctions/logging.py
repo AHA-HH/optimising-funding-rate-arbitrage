@@ -9,6 +9,7 @@ class Logger:
             'yield': []  # To log average yield
         }
         
+        
     def log_trade(self, position: Position, action: str):
         """
         Log the details of a trade. If the trade is closed, update the existing log entry.
@@ -53,7 +54,15 @@ class Logger:
                     break
 
 
-    def log_funding_payment_and_pnl(self, time: str, position: Position, payment: float, pnl: float, initial_delta: float, current_delta: float):
+    def log_funding_payment_and_pnl(
+        self, 
+        time: str, 
+        position: Position, 
+        payment: float, 
+        pnl: float, 
+        initial_delta: float, 
+        current_delta: float
+        ):
         """
         Log the funding payment for a specific asset at a given time.
         """
@@ -110,7 +119,15 @@ class Logger:
         })
         
         
-    def log_metrics(self, period: str, annualised_return: float, sharpe_ratio: float, max_drawdown: float, sortino_ratio: float, calmar_ratio: float):
+    def log_metrics(
+        self, 
+        period: str, 
+        annualised_return: float, 
+        sharpe_ratio: float, 
+        max_drawdown: float, 
+        sortino_ratio: float, 
+        calmar_ratio: float
+        ):
         """
         Log the performance metrics at a given time.
         """
@@ -124,18 +141,59 @@ class Logger:
         })
         
     
-    def log_yield(self, date: str, bin_btc: float, bin_eth: float, bybit_btc: float, bybit_eth: float, okx_btc: float, okx_eth: float):
+    def log_yield(
+        self, 
+        date: str, 
+        bin_btcusd: float, 
+        bin_btccm: float, 
+        bin_ethusd: float, 
+        bin_ethcm: float, 
+        bybit_btcusd: float, 
+        bybit_btccm: float, 
+        bybit_ethusd: float, 
+        bybit_ethcm: float, 
+        okx_btcusd: float, 
+        okx_btccm: float, 
+        okx_ethusd: float, 
+        okx_ethcm: float, 
+        bin_btc: float, 
+        bin_eth: float, 
+        bybit_btc: float, 
+        bybit_eth: float, 
+        okx_btc: float, 
+        okx_eth: float, 
+        bin_total: float, 
+        bybit_total: float, 
+        okx_total: float, 
+        total_yield: float
+    ):
         """
         Log the average yield at a given time.
         """
         self.logs['yield'].append({
             'date': date,
-            'binance_btc_yield': bin_btc,
-            'binance_eth_yield': bin_eth,
-            'bybit_btc_yield': bybit_btc,
-            'bybit_eth_yield': bybit_eth,
-            'okx_btc_yield': okx_btc,
-            'okx_eth_yield': okx_eth
+            'binance_btcusd_yield': bin_btcusd,
+            'binance_btccm_yield': bin_btccm,
+            'binance_ethusd_yield': bin_ethusd,
+            'binance_ethcm_yield': bin_ethcm,
+            'bybit_btcusd_yield': bybit_btcusd,
+            'bybit_btccm_yield': bybit_btccm,
+            'bybit_ethusd_yield': bybit_ethusd,
+            'bybit_ethcm_yield': bybit_ethcm,
+            'okx_btcusd_yield': okx_btcusd,
+            'okx_btccm_yield': okx_btccm,
+            'okx_ethusd_yield': okx_ethusd,
+            'okx_ethcm_yield': okx_ethcm,
+            'binance_btc_yield': bin_btc, 
+            'binance_eth_yield': bin_eth, 
+            'bybit_btc_yield': bybit_btc, 
+            'bybit_eth_yield': bybit_eth, 
+            'okx_btc_yield': okx_btc, 
+            'okx_eth_yield': okx_eth,
+            'binance_total_yield': bin_total,
+            'bybit_total_yield': bybit_total,
+            'okx_total_yield': okx_total,
+            'total_yield': total_yield
         })
         
 
