@@ -11,10 +11,12 @@ class Plotter:
         self,
         input_dir: str,
         strategy_type: str,
+        reinvest_type: bool,
         initial_capital: float,
     ):
         self.input_dir = input_dir
         self.strategy_type = strategy_type
+        self.reinvest_type = reinvest_type
         self.initial_capital = initial_capital
 
         self.collateral_log = pd.read_csv(f'./results/{self.input_dir}/collateral_log.csv')
@@ -22,8 +24,8 @@ class Plotter:
         self.trades_log = pd.read_csv(f'./results/{self.input_dir}/trades_log.csv')
         self.yield_log = pd.read_csv(f'./results/{self.input_dir}/yield.csv')
 
-        if self.input_dir == 'simple_hold':
-            self.plot_name = 'Simple Holding'
+        if self.input_dir == 'hold':
+            self.plot_name = 'Holding'
         elif self.input_dir == 'simple_threshold':
             self.plot_name = 'Simple Threshold'
         elif self.input_dir == 'simple_reinvest':
@@ -56,6 +58,10 @@ class Plotter:
             collateral_log['pnl_basis'] = collateral_log[unrealised_pnl_columns].sum(axis=1)
             collateral_log['pnl_funding'] = collateral_log[funding_columns].sum(axis=1)
             collateral_log['total_pnl'] = collateral_log['pnl_basis'] + collateral_log['pnl_funding']
+        elif self.reinvest_type == True:
+            collateral_log['pnl_basis'] = collateral_log[collateral_columns].sum(axis=1) - initial_investment
+            collateral_log['pnl_funding'] = collateral_log[funding_columns].sum(axis=1)
+            collateral_log['total_pnl'] = collateral_log['pnl_basis'] - collateral_log['pnl_funding']
         else:
             collateral_log['pnl_basis'] = collateral_log[collateral_columns].sum(axis=1) - initial_investment
             collateral_log['pnl_funding'] = collateral_log[funding_columns].sum(axis=1)
