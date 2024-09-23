@@ -165,6 +165,8 @@ class Logger:
         bin_total: float, 
         bybit_total: float, 
         okx_total: float, 
+        btc_total: float,
+        eth_total: float,
         total_yield: float
     ):
         """
@@ -193,6 +195,8 @@ class Logger:
             'binance_total_yield': bin_total,
             'bybit_total_yield': bybit_total,
             'okx_total_yield': okx_total,
+            'btc_total_yield': btc_total,
+            'eth_total_yield': eth_total,
             'total_yield': total_yield
         })
         

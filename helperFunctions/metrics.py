@@ -177,6 +177,9 @@ class Metrics:
             daily_okx_eth = 0
             daily_okx = 0
             
+            daily_btc = 0
+            daily_eth = 0
+            
             daily_total = 0
 
             daily_funding = daily_funding_payments[daily_funding_payments['date'] == current_date]
@@ -222,21 +225,25 @@ class Metrics:
                         daily_binance_btcusd += funding_yield
                         daily_binance_btc += funding_yield
                         daily_binance += funding_yield
+                        daily_btc += funding_yield
                         daily_total += funding_yield
                     elif pair == 'BTCUSDCM':
                         daily_binance_btccm += funding_yield
                         daily_binance_btc += funding_yield
                         daily_binance += funding_yield
+                        daily_btc += funding_yield
                         daily_total += funding_yield
                     elif pair == 'ETHUSDT':
                         daily_binance_ethusd += funding_yield
                         daily_binance_eth += funding_yield
                         daily_binance += funding_yield
+                        daily_eth += funding_yield
                         daily_total += funding_yield
                     elif pair == 'ETHUSDCM':
                         daily_binance_ethcm += funding_yield
                         daily_binance_eth += funding_yield
                         daily_binance += funding_yield
+                        daily_eth += funding_yield
                         daily_total += funding_yield
                         
                 elif exchange == 'bybit':
@@ -244,21 +251,25 @@ class Metrics:
                         daily_bybit_btcusd += funding_yield
                         daily_bybit_btc += funding_yield
                         daily_bybit += funding_yield
+                        daily_btc += funding_yield
                         daily_total += funding_yield
                     elif pair == 'BTCUSDCM':
                         daily_bybit_btccm += funding_yield
                         daily_bybit_btc += funding_yield
                         daily_bybit += funding_yield
+                        daily_btc += funding_yield
                         daily_total += funding_yield
                     elif pair == 'ETHUSDT':
                         daily_bybit_ethusd += funding_yield
                         daily_bybit_eth += funding_yield
                         daily_bybit += funding_yield
+                        daily_eth += funding_yield
                         daily_total += funding_yield
                     elif pair == 'ETHUSDCM':
                         daily_bybit_ethcm += funding_yield
                         daily_bybit_eth += funding_yield
                         daily_bybit += funding_yield
+                        daily_eth += funding_yield
                         daily_total += funding_yield
 
                 elif exchange == 'okx':
@@ -266,21 +277,25 @@ class Metrics:
                         daily_okx_btcusd += funding_yield
                         daily_okx_btc += funding_yield
                         daily_okx += funding_yield
+                        daily_btc += funding_yield
                         daily_total += funding_yield
                     elif pair == 'BTCUSDCM':
                         daily_okx_btccm += funding_yield
                         daily_okx_btc += funding_yield
                         daily_okx += funding_yield
+                        daily_btc += funding_yield
                         daily_total += funding_yield
                     elif pair == 'ETHUSDT':
                         daily_okx_ethusd += funding_yield
                         daily_okx_eth += funding_yield
                         daily_okx += funding_yield
+                        daily_eth += funding_yield
                         daily_total += funding_yield
                     elif pair == 'ETHUSDCM':
                         daily_okx_ethcm += funding_yield
                         daily_okx_eth += funding_yield
                         daily_okx += funding_yield
+                        daily_eth += funding_yield
                         daily_total += funding_yield
 
             self.logger.log_yield(
@@ -306,6 +321,8 @@ class Metrics:
                 daily_binance,
                 daily_bybit,
                 daily_okx,
+                daily_btc,
+                daily_eth,
                 daily_total
                 )
 

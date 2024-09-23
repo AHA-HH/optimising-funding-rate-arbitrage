@@ -59,11 +59,14 @@ class Plotter:
             collateral_log['pnl_funding'] = collateral_log[funding_columns].sum(axis=1)
             collateral_log['total_pnl'] = collateral_log['pnl_basis'] + collateral_log['pnl_funding']
         elif self.reinvest_type == True:
-            collateral_log['pnl_basis'] = collateral_log[collateral_columns].sum(axis=1) - initial_investment
-            collateral_log['pnl_funding'] = collateral_log[funding_columns].sum(axis=1)
-            collateral_log['total_pnl'] = collateral_log['pnl_basis'] - collateral_log['pnl_funding']
+            # collateral_log['pnl_basis'] = collateral_log[collateral_columns].sum(axis=1) - initial_investment
+            # collateral_log['pnl_funding'] = collateral_log[funding_columns].sum(axis=1)
+            # collateral_log['total_pnl'] = collateral_log['pnl_basis'] - collateral_log['pnl_funding']
+            collateral_log['pnl_basis'] = collateral_log[unrealised_pnl_columns].sum(axis=1)
+            collateral_log['pnl_funding'] = collateral_log[collateral_columns].sum(axis=1) - initial_investment
+            collateral_log['total_pnl'] = collateral_log['pnl_basis'] + collateral_log['pnl_funding']
         else:
-            collateral_log['pnl_basis'] = collateral_log[collateral_columns].sum(axis=1) - initial_investment
+            collateral_log['pnl_basis'] = collateral_log[collateral_columns].sum(axis=1) + collateral_log[unrealised_pnl_columns].sum(axis=1) - initial_investment
             collateral_log['pnl_funding'] = collateral_log[funding_columns].sum(axis=1)
             collateral_log['total_pnl'] = collateral_log['pnl_basis'] + collateral_log['pnl_funding']
 
@@ -347,493 +350,6 @@ class Plotter:
             print(f"Plot saved to ./results/{self.input_dir}/trading_volume.png")
 
 
-    def plot_yield(self):
-        yield_df = self.yield_log.copy()
-
-        yield_df['btc_yield'] = yield_df['binance_btc_yield'] + yield_df['okx_btc_yield'] + yield_df['bybit_btc_yield']
-        yield_df['eth_yield'] = yield_df['binance_eth_yield'] + yield_df['okx_eth_yield'] + yield_df['bybit_eth_yield']
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['btc_yield'],
-            mode='lines',
-            name='Avg BTC Yield',
-            line=dict(color='orange', width=2),
-            opacity=0.8
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['eth_yield'],
-            mode='lines',
-            name='Avg ETH Yield',
-            line=dict(color='green', width=1.5),
-            opacity=0.8
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['total_yield'],
-            mode='lines',
-            name='Avg Perp Yield',
-            line=dict(color='blue', width=1.25),
-            opacity=0.8
-        ))
-
-        fig.update_layout(
-            title=f'{self.plot_name} - Volume Weighted Average Perpetual Yield',
-            yaxis_title='Average Yield (%)',
-            template='plotly_white',
-            hovermode='x unified',
-            legend=dict(
-                orientation='h',
-                x=0.5,
-                y=-0.2,
-                xanchor='center',
-                yanchor='top'
-            ),
-            width=800,
-            height=600,
-            margin=dict(l=40, r=40, t=80, b=40)
-        )
-
-        fig.update_xaxes(tickformat='%b %Y')
-
-        fig.write_image(f'./results/{self.input_dir}/volume_weighted_avg_yield.png')
-        print(f"Plot saved to ./results/{self.input_dir}/volume_weighted_avg_yield.png")
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['bybit_btccm_yield'],
-            mode='lines',
-            name='Bybit BTCUSD',
-            line=dict(color='red', width=2),
-            opacity=0.7,
-            legendrank=5
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['okx_btccm_yield'],
-            mode='lines',
-            name='OKX BTC-USD-SWAP',
-            line=dict(color='cyan', width=2),
-            opacity=0.7,
-            legendrank=6
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['binance_btccm_yield'],
-            mode='lines',
-            name='Binance BTCUSD_PERP',
-            line=dict(color='orange', width=2),
-            opacity=0.7,
-            legendrank=4
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['binance_btcusd_yield'],
-            mode='lines',
-            name='Binance BTC/USDT:USDT',
-            line=dict(color='blue', width=2),
-            opacity=0.7,
-            legendrank=1
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['bybit_btcusd_yield'],
-            mode='lines',
-            name='Bybit BTC/USDT:USDT',
-            line=dict(color='green', width=2),
-            opacity=0.7,
-            legendrank=2
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['okx_btcusd_yield'],
-            mode='lines',
-            name='OKX BTC-USDT-SWAP',
-            line=dict(color='purple', width=2),
-            opacity=0.7,
-            legendrank=3
-        ))
-
-        fig.update_layout(
-            title=f'{self.plot_name} - Historic BTC Perpetual Yields',
-            yaxis_title='Yield (%)',
-            template='plotly_white',
-            hovermode='x unified',
-            legend=dict(
-                orientation='h',
-                x=0.5,
-                y=-0.2,
-                xanchor='center',
-                yanchor='top'
-            ),
-            width=800,
-            height=600,
-            margin=dict(l=40, r=40, t=80, b=40)
-        )
-
-        fig.update_xaxes(tickformat='%b %Y')
-
-        fig.write_image(f'./results/{self.input_dir}/historic_btc_yield.png')
-        print(f"Plot saved to ./results/{self.input_dir}/historic_btc_yield.png")
-
-        total_yields_btc = {
-            'Binance BTC/USDT:USDT': (yield_df['binance_btcusd_yield']).sum(),
-            'Binance BTCUSD_PERP': (yield_df['binance_btccm_yield']).sum(),
-            'Bybit BTC/USDT:USDT': (yield_df['bybit_btcusd_yield']).sum(),
-            'Bybit BTCUSD': (yield_df['bybit_btccm_yield']).sum(),
-            'OKX BTC-USDT-SWAP': (yield_df['okx_btcusd_yield']).sum(),
-            'OKX BTC-USD-SWAP': (yield_df['okx_btccm_yield']).sum(),
-        }
-
-        total_yields_btc_df = pd.DataFrame(list(total_yields_btc.items()), columns=['Asset', 'Cumulative Yield'])
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Bar(
-            x=total_yields_btc_df['Asset'],
-            y=total_yields_btc_df['Cumulative Yield'],
-            marker_color=['blue', 'orange', 'green', 'red', 'purple', 'cyan'],  
-            opacity=1.0
-        ))
-
-        fig.update_layout(
-            title=f'{self.plot_name} - Cumulative BTC Perpetual Yields',
-            yaxis_title='Cumulative Yield (%)',
-            template='plotly_white',
-            hovermode='x unified',
-            width=800,
-            height=600,
-            margin=dict(l=40, r=40, t=80, b=40)
-        )
-
-        fig.write_image(f'./results/{self.input_dir}/cumulative_btc_yields.png')
-        print(f"Plot saved to ./results/{self.input_dir}/cumulative_btc_yields.png")
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['binance_btc_yield'],
-            mode='lines',
-            name='Binance',
-            line=dict(color='blue', width=2),
-            opacity=0.7,
-            legendrank=1
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['bybit_btc_yield'],
-            mode='lines',
-            name='Bybit',
-            line=dict(color='orange', width=2),
-            opacity=0.7,
-            legendrank=2
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['okx_btc_yield'],
-            mode='lines',
-            name='OKX',
-            line=dict(color='green', width=2),
-            opacity=0.7,
-            legendrank=3
-        ))
-
-        fig.update_layout(
-            title=f'{self.plot_name} - BTC Exchange Perpetual Yields',
-            yaxis_title='Yield (%)',
-            template='plotly_white',
-            hovermode='x unified',
-            legend=dict(
-                orientation='h',
-                x=0.5,
-                y=-0.2,
-                xanchor='center',
-                yanchor='top'
-            ),
-            width=800,
-            height=600,
-            margin=dict(l=40, r=40, t=80, b=40)
-        )
-
-        fig.update_xaxes(tickformat='%b %Y')
-
-        fig.write_image(f'./results/{self.input_dir}/btc_exchange_yields.png')
-        print(f"Plot saved to ./results/{self.input_dir}/btc_exchange_yields.png")
-
-        btc_columns = [
-            'binance_btcusd_yield',
-            'binance_btccm_yield',
-            'bybit_btcusd_yield',
-            'bybit_btccm_yield',
-            'okx_btcusd_yield',
-            'okx_btccm_yield'
-        ]
-
-        btc_yield_df = yield_df[btc_columns]
-
-        positive_counts_btc = (btc_yield_df >= 0).sum().sum()
-        negative_counts_btc = (btc_yield_df < 0).sum().sum()
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Pie(
-            values=[positive_counts_btc, negative_counts_btc], 
-            labels=['Positive', 'Negative'],
-            textinfo='percent',
-            hole=0.7, 
-            sort=False, 
-            direction='counterclockwise', 
-            marker=dict(colors=['green', 'red']),
-            opacity=1.0
-        ))
-
-        fig.update_layout(
-            title_text=f'BTC Perpetual Yield Day Counts',
-            showlegend=True,
-            legend=dict(
-                orientation='h',
-                x=0.5,
-                y=-0.2,
-                xanchor='center',
-                yanchor='top'
-            ),
-            height=300,
-            width=300
-        )
-
-        fig.write_image(f'./results/{self.input_dir}/btc_yield_day_counts.png')
-        print(f"Plot saved to ./results/{self.input_dir}/btc_yield_day_counts.png")
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['bybit_ethcm_yield'],
-            mode='lines',
-            name='Bybit ETHUSD',
-            line=dict(color='red', width=2),
-            opacity=0.7,
-            legendrank=5
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['okx_ethcm_yield'],
-            mode='lines',
-            name='OKX ETH-USD-SWAP',
-            line=dict(color='cyan', width=2),
-            opacity=0.7,
-            legendrank=6
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['binance_ethcm_yield'],
-            mode='lines',
-            name='Binance ETHUSD_PERP',
-            line=dict(color='orange', width=2),
-            opacity=0.7,
-            legendrank=4
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['binance_ethusd_yield'],
-            mode='lines',
-            name='Binance ETH/USDT:USDT',
-            line=dict(color='blue', width=2),
-            opacity=0.7,
-            legendrank=1
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['bybit_ethusd_yield'],
-            mode='lines',
-            name='Bybit ETH/USDT:USDT',
-            line=dict(color='green', width=2),
-            opacity=0.7,
-            legendrank=2
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['okx_ethusd_yield'],
-            mode='lines',
-            name='OKX ETH-USDT-SWAP',
-            line=dict(color='purple', width=2),
-            opacity=0.7,
-            legendrank=3
-        ))
-
-        fig.update_layout(
-            title=f'{self.plot_name} - Historic ETH Perpetual Yields',
-            yaxis_title='Yield (%)',
-            template='plotly_white',
-            hovermode='x unified',
-            legend=dict(
-                orientation='h',
-                x=0.5,
-                y=-0.2,
-                xanchor='center',
-                yanchor='top'
-            ),
-            width=800,
-            height=600,
-            margin=dict(l=40, r=40, t=80, b=40)
-        )
-
-        fig.update_xaxes(tickformat='%b %Y')
-
-        fig.write_image(f'./results/{self.input_dir}/historic_eth_yield.png')
-        print(f"Plot saved to ./results/{self.input_dir}/historic_eth_yield.png")
-
-        total_yields_eth = {
-            'Binance ETH/USDT:USDT': (yield_df['binance_ethusd_yield']).sum(),
-            'Binance ETHUSD_PERP': (yield_df['binance_ethcm_yield']).sum(),
-            'Bybit ETH/USDT:USDT': (yield_df['bybit_ethusd_yield']).sum(),
-            'Bybit ETHUSD': (yield_df['bybit_ethcm_yield']).sum(),
-            'OKX ETH-USDT-SWAP': (yield_df['okx_ethusd_yield']).sum(),
-            'OKX ETH-USD-SWAP': (yield_df['okx_ethcm_yield']).sum(),
-        }
-
-        total_yields_eth_df = pd.DataFrame(list(total_yields_eth.items()), columns=['Asset', 'Cumulative Yield'])
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Bar(
-            x=total_yields_eth_df['Asset'],
-            y=total_yields_eth_df['Cumulative Yield'],
-            marker_color=['blue', 'orange', 'green', 'red', 'purple', 'cyan'],  
-            opacity=1.0
-        ))
-
-        fig.update_layout(
-            title=f'{self.plot_name} - Cumulative ETH Perpetual Yields',
-            yaxis_title='Cumulative Yield (%)',
-            template='plotly_white',
-            hovermode='x unified',
-            width=800,
-            height=600,
-            margin=dict(l=40, r=40, t=80, b=40)
-        )
-
-        fig.write_image(f'./results/{self.input_dir}/cumulative_eth_yields.png')
-        print(f"Plot saved to ./results/{self.input_dir}/cumulative_eth_yields.png")
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['binance_eth_yield'],
-            mode='lines',
-            name='Binance',
-            line=dict(color='blue', width=2),
-            opacity=0.7,
-            legendrank=1
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['bybit_eth_yield'],
-            mode='lines',
-            name='Bybit',
-            line=dict(color='orange', width=2),
-            opacity=0.7,
-            legendrank=2
-        ))
-
-        fig.add_trace(go.Scatter(
-            x=yield_df['date'],
-            y=yield_df['okx_eth_yield'],
-            mode='lines',
-            name='OKX',
-            line=dict(color='green', width=2),
-            opacity=0.7,
-            legendrank=3
-        ))
-
-        fig.update_layout(
-            title=f'{self.plot_name} - ETH Exchange Perpetual Yields',
-            yaxis_title='Yield (%)',
-            template='plotly_white',
-            hovermode='x unified',
-            legend=dict(
-                orientation='h',
-                x=0.5,
-                y=-0.2,
-                xanchor='center',
-                yanchor='top'
-            ),
-            width=800,
-            height=600,
-            margin=dict(l=40, r=40, t=80, b=40)
-        )
-
-        fig.update_xaxes(tickformat='%b %Y')
-
-        fig.write_image(f'./results/{self.input_dir}/eth_exchange_yields.png')
-        print(f"Plot saved to ./results/{self.input_dir}/eth_exchange_yields.png")
-
-        eth_columns = [
-            'binance_ethusd_yield',
-            'binance_ethcm_yield',
-            'bybit_ethusd_yield',
-            'bybit_ethcm_yield',
-            'okx_ethusd_yield',
-            'okx_ethcm_yield'
-        ]
-
-        eth_yield_df = yield_df[eth_columns]
-
-        positive_counts_eth = (eth_yield_df >= 0).sum().sum()
-        negative_counts_eth = (eth_yield_df < 0).sum().sum()
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Pie(
-            values=[positive_counts_eth, negative_counts_eth], 
-            labels=['Positive', 'Negative'],
-            textinfo='percent',
-            hole=0.7, 
-            sort=False, 
-            direction='counterclockwise', 
-            marker=dict(colors=['green', 'red']),
-            opacity=1.0
-        ))
-
-        fig.update_layout(
-            title_text=f'ETH Perpetual Yield Day Counts',
-            showlegend=True,
-            legend=dict(
-                orientation='h',
-                x=0.5,
-                y=-0.2,
-                xanchor='center',
-                yanchor='top'
-            ),
-            height=300,
-            width=300
-        )
-
-        fig.write_image(f'./results/{self.input_dir}/eth_yield_day_counts.png')
-        print(f"Plot saved to ./results/{self.input_dir}/eth_yield_day_counts.png")
-
     # def plot_yield(self):
     #     yield_df = self.yield_log.copy()
 
@@ -895,7 +411,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['bybit_btccm_yield'] / 0.025,
+    #         y=yield_df['bybit_btccm_yield'],
     #         mode='lines',
     #         name='Bybit BTCUSD',
     #         line=dict(color='red', width=2),
@@ -905,7 +421,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['okx_btccm_yield'] / 0.0225,
+    #         y=yield_df['okx_btccm_yield'],
     #         mode='lines',
     #         name='OKX BTC-USD-SWAP',
     #         line=dict(color='cyan', width=2),
@@ -915,7 +431,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['binance_btccm_yield'] / 0.09,
+    #         y=yield_df['binance_btccm_yield'],
     #         mode='lines',
     #         name='Binance BTCUSD_PERP',
     #         line=dict(color='orange', width=2),
@@ -925,7 +441,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['binance_btcusd_yield'] / 0.36,
+    #         y=yield_df['binance_btcusd_yield'],
     #         mode='lines',
     #         name='Binance BTC/USDT:USDT',
     #         line=dict(color='blue', width=2),
@@ -935,7 +451,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['bybit_btcusd_yield'] / 0.11,
+    #         y=yield_df['bybit_btcusd_yield'],
     #         mode='lines',
     #         name='Bybit BTC/USDT:USDT',
     #         line=dict(color='green', width=2),
@@ -945,7 +461,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['okx_btcusd_yield'] / 0.09,
+    #         y=yield_df['okx_btcusd_yield'],
     #         mode='lines',
     #         name='OKX BTC-USDT-SWAP',
     #         line=dict(color='purple', width=2),
@@ -1012,7 +528,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['binance_btc_yield'] / 0.54,
+    #         y=yield_df['binance_btc_yield'],
     #         mode='lines',
     #         name='Binance',
     #         line=dict(color='blue', width=2),
@@ -1022,7 +538,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['bybit_btc_yield'] / 0.11,
+    #         y=yield_df['bybit_btc_yield'],
     #         mode='lines',
     #         name='Bybit',
     #         line=dict(color='orange', width=2),
@@ -1032,7 +548,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['okx_btc_yield'] / 0.09,
+    #         y=yield_df['okx_btc_yield'],
     #         mode='lines',
     #         name='OKX',
     #         line=dict(color='green', width=2),
@@ -1110,7 +626,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['bybit_ethcm_yield'] / 0.0175,
+    #         y=yield_df['bybit_ethcm_yield'],
     #         mode='lines',
     #         name='Bybit ETHUSD',
     #         line=dict(color='red', width=2),
@@ -1120,7 +636,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['okx_ethcm_yield'] / 0.0225,
+    #         y=yield_df['okx_ethcm_yield'],
     #         mode='lines',
     #         name='OKX ETH-USD-SWAP',
     #         line=dict(color='cyan', width=2),
@@ -1130,7 +646,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['binance_ethcm_yield'] / 0.045,
+    #         y=yield_df['binance_ethcm_yield'],
     #         mode='lines',
     #         name='Binance ETHUSD_PERP',
     #         line=dict(color='orange', width=2),
@@ -1140,7 +656,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['binance_ethusd_yield'] / 0.18,
+    #         y=yield_df['binance_ethusd_yield'],
     #         mode='lines',
     #         name='Binance ETH/USDT:USDT',
     #         line=dict(color='blue', width=2),
@@ -1150,7 +666,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['bybit_ethusd_yield'] / 0.07,
+    #         y=yield_df['bybit_ethusd_yield'],
     #         mode='lines',
     #         name='Bybit ETH/USDT:USDT',
     #         line=dict(color='green', width=2),
@@ -1160,7 +676,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['okx_ethusd_yield'] / 0.09,
+    #         y=yield_df['okx_ethusd_yield'],
     #         mode='lines',
     #         name='OKX ETH-USDT-SWAP',
     #         line=dict(color='purple', width=2),
@@ -1227,7 +743,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['binance_eth_yield'] / 0.18,
+    #         y=yield_df['binance_eth_yield'],
     #         mode='lines',
     #         name='Binance',
     #         line=dict(color='blue', width=2),
@@ -1237,7 +753,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['bybit_eth_yield'] / 0.07,
+    #         y=yield_df['bybit_eth_yield'],
     #         mode='lines',
     #         name='Bybit',
     #         line=dict(color='orange', width=2),
@@ -1247,7 +763,7 @@ class Plotter:
 
     #     fig.add_trace(go.Scatter(
     #         x=yield_df['date'],
-    #         y=yield_df['okx_eth_yield'] / 0.09,
+    #         y=yield_df['okx_eth_yield'],
     #         mode='lines',
     #         name='OKX',
     #         line=dict(color='green', width=2),
@@ -1321,6 +837,492 @@ class Plotter:
     #     fig.write_image(f'./results/{self.input_dir}/eth_yield_day_counts.png')
     #     print(f"Plot saved to ./results/{self.input_dir}/eth_yield_day_counts.png")
 
+    def plot_yield(self):
+        yield_df = self.yield_log.copy()
+
+        yield_df['btc_yield'] = yield_df['btc_total_yield']
+        yield_df['eth_yield'] = yield_df['eth_total_yield']
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['btc_yield'] / 0.56,
+            mode='lines',
+            name='Avg BTC Yield',
+            line=dict(color='orange', width=2),
+            opacity=0.8
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['eth_yield'] / 0.34,
+            mode='lines',
+            name='Avg ETH Yield',
+            line=dict(color='green', width=1.5),
+            opacity=0.8
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['total_yield'],
+            mode='lines',
+            name='Avg Perp Yield',
+            line=dict(color='blue', width=1.25),
+            opacity=0.8
+        ))
+
+        fig.update_layout(
+            title=f'{self.plot_name} - Volume Weighted Average Perpetual Yield',
+            yaxis_title='Average Yield (%)',
+            template='plotly_white',
+            hovermode='x unified',
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            ),
+            width=800,
+            height=600,
+            margin=dict(l=40, r=40, t=80, b=40)
+        )
+
+        fig.update_xaxes(tickformat='%b %Y')
+
+        fig.write_image(f'./results/{self.input_dir}/volume_weighted_avg_yield.png')
+        print(f"Plot saved to ./results/{self.input_dir}/volume_weighted_avg_yield.png")
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['bybit_btccm_yield'] / 0.025,
+            mode='lines',
+            name='Bybit BTCUSD',
+            line=dict(color='red', width=2),
+            opacity=0.7,
+            legendrank=5
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['okx_btccm_yield'] / 0.0225,
+            mode='lines',
+            name='OKX BTC-USD-SWAP',
+            line=dict(color='cyan', width=2),
+            opacity=0.7,
+            legendrank=6
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['binance_btccm_yield'] / 0.09,
+            mode='lines',
+            name='Binance BTCUSD_PERP',
+            line=dict(color='orange', width=2),
+            opacity=0.7,
+            legendrank=4
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['binance_btcusd_yield'] / 0.36,
+            mode='lines',
+            name='Binance BTC/USDT:USDT',
+            line=dict(color='blue', width=2),
+            opacity=0.7,
+            legendrank=1
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['bybit_btcusd_yield'] / 0.11,
+            mode='lines',
+            name='Bybit BTC/USDT:USDT',
+            line=dict(color='green', width=2),
+            opacity=0.7,
+            legendrank=2
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['okx_btcusd_yield'] / 0.09,
+            mode='lines',
+            name='OKX BTC-USDT-SWAP',
+            line=dict(color='purple', width=2),
+            opacity=0.7,
+            legendrank=3
+        ))
+
+        fig.update_layout(
+            title=f'{self.plot_name} - Historic BTC Perpetual Yields',
+            yaxis_title='Yield (%)',
+            template='plotly_white',
+            hovermode='x unified',
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            ),
+            width=800,
+            height=600,
+            margin=dict(l=40, r=40, t=80, b=40)
+        )
+
+        fig.update_xaxes(tickformat='%b %Y')
+
+        fig.write_image(f'./results/{self.input_dir}/historic_btc_yield.png')
+        print(f"Plot saved to ./results/{self.input_dir}/historic_btc_yield.png")
+
+        total_yields_btc = {
+            'Binance BTC/USDT:USDT': (yield_df['binance_btcusd_yield']).sum(),
+            'Binance BTCUSD_PERP': (yield_df['binance_btccm_yield']).sum(),
+            'Bybit BTC/USDT:USDT': (yield_df['bybit_btcusd_yield']).sum(),
+            'Bybit BTCUSD': (yield_df['bybit_btccm_yield']).sum(),
+            'OKX BTC-USDT-SWAP': (yield_df['okx_btcusd_yield']).sum(),
+            'OKX BTC-USD-SWAP': (yield_df['okx_btccm_yield']).sum(),
+        }
+
+        total_yields_btc_df = pd.DataFrame(list(total_yields_btc.items()), columns=['Asset', 'Cumulative Yield'])
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Bar(
+            x=total_yields_btc_df['Asset'],
+            y=total_yields_btc_df['Cumulative Yield'],
+            marker_color=['blue', 'orange', 'green', 'red', 'purple', 'cyan'],  
+            opacity=1.0
+        ))
+
+        fig.update_layout(
+            title=f'{self.plot_name} - Cumulative BTC Perpetual Yields',
+            yaxis_title='Cumulative Yield (%)',
+            template='plotly_white',
+            hovermode='x unified',
+            width=800,
+            height=600,
+            margin=dict(l=40, r=40, t=80, b=40)
+        )
+
+        fig.write_image(f'./results/{self.input_dir}/cumulative_btc_yields.png')
+        print(f"Plot saved to ./results/{self.input_dir}/cumulative_btc_yields.png")
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['binance_btc_yield'] / 0.54,
+            mode='lines',
+            name='Binance',
+            line=dict(color='blue', width=2),
+            opacity=0.7,
+            legendrank=1
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['bybit_btc_yield'] / 0.11,
+            mode='lines',
+            name='Bybit',
+            line=dict(color='orange', width=2),
+            opacity=0.7,
+            legendrank=2
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['okx_btc_yield'] / 0.09,
+            mode='lines',
+            name='OKX',
+            line=dict(color='green', width=2),
+            opacity=0.7,
+            legendrank=3
+        ))
+
+        fig.update_layout(
+            title=f'{self.plot_name} - BTC Exchange Perpetual Yields',
+            yaxis_title='Yield (%)',
+            template='plotly_white',
+            hovermode='x unified',
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            ),
+            width=800,
+            height=600,
+            margin=dict(l=40, r=40, t=80, b=40)
+        )
+
+        fig.update_xaxes(tickformat='%b %Y')
+
+        fig.write_image(f'./results/{self.input_dir}/btc_exchange_yields.png')
+        print(f"Plot saved to ./results/{self.input_dir}/btc_exchange_yields.png")
+
+        btc_columns = [
+            'binance_btcusd_yield',
+            'binance_btccm_yield',
+            'bybit_btcusd_yield',
+            'bybit_btccm_yield',
+            'okx_btcusd_yield',
+            'okx_btccm_yield'
+        ]
+
+        btc_yield_df = yield_df[btc_columns]
+
+        positive_counts_btc = (btc_yield_df >= 0).sum().sum()
+        negative_counts_btc = (btc_yield_df < 0).sum().sum()
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Pie(
+            values=[positive_counts_btc, negative_counts_btc], 
+            labels=['Positive', 'Negative'],
+            textinfo='percent',
+            hole=0.7, 
+            sort=False, 
+            direction='counterclockwise', 
+            marker=dict(colors=['green', 'red']),
+            opacity=1.0
+        ))
+
+        fig.update_layout(
+            title_text=f'BTC Perpetual Yield Day Counts',
+            showlegend=True,
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            ),
+            height=300,
+            width=300
+        )
+
+        fig.write_image(f'./results/{self.input_dir}/btc_yield_day_counts.png')
+        print(f"Plot saved to ./results/{self.input_dir}/btc_yield_day_counts.png")
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['bybit_ethcm_yield'] / 0.0175,
+            mode='lines',
+            name='Bybit ETHUSD',
+            line=dict(color='red', width=2),
+            opacity=0.7,
+            legendrank=5
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['okx_ethcm_yield'] / 0.0225,
+            mode='lines',
+            name='OKX ETH-USD-SWAP',
+            line=dict(color='cyan', width=2),
+            opacity=0.7,
+            legendrank=6
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['binance_ethcm_yield'] / 0.045,
+            mode='lines',
+            name='Binance ETHUSD_PERP',
+            line=dict(color='orange', width=2),
+            opacity=0.7,
+            legendrank=4
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['binance_ethusd_yield'] / 0.18,
+            mode='lines',
+            name='Binance ETH/USDT:USDT',
+            line=dict(color='blue', width=2),
+            opacity=0.7,
+            legendrank=1
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['bybit_ethusd_yield'] / 0.07,
+            mode='lines',
+            name='Bybit ETH/USDT:USDT',
+            line=dict(color='green', width=2),
+            opacity=0.7,
+            legendrank=2
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['okx_ethusd_yield'] / 0.09,
+            mode='lines',
+            name='OKX ETH-USDT-SWAP',
+            line=dict(color='purple', width=2),
+            opacity=0.7,
+            legendrank=3
+        ))
+
+        fig.update_layout(
+            title=f'{self.plot_name} - Historic ETH Perpetual Yields',
+            yaxis_title='Yield (%)',
+            template='plotly_white',
+            hovermode='x unified',
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            ),
+            width=800,
+            height=600,
+            margin=dict(l=40, r=40, t=80, b=40)
+        )
+
+        fig.update_xaxes(tickformat='%b %Y')
+
+        fig.write_image(f'./results/{self.input_dir}/historic_eth_yield.png')
+        print(f"Plot saved to ./results/{self.input_dir}/historic_eth_yield.png")
+
+        total_yields_eth = {
+            'Binance ETH/USDT:USDT': (yield_df['binance_ethusd_yield']).sum(),
+            'Binance ETHUSD_PERP': (yield_df['binance_ethcm_yield']).sum(),
+            'Bybit ETH/USDT:USDT': (yield_df['bybit_ethusd_yield']).sum(),
+            'Bybit ETHUSD': (yield_df['bybit_ethcm_yield']).sum(),
+            'OKX ETH-USDT-SWAP': (yield_df['okx_ethusd_yield']).sum(),
+            'OKX ETH-USD-SWAP': (yield_df['okx_ethcm_yield']).sum(),
+        }
+
+        total_yields_eth_df = pd.DataFrame(list(total_yields_eth.items()), columns=['Asset', 'Cumulative Yield'])
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Bar(
+            x=total_yields_eth_df['Asset'],
+            y=total_yields_eth_df['Cumulative Yield'],
+            marker_color=['blue', 'orange', 'green', 'red', 'purple', 'cyan'],  
+            opacity=1.0
+        ))
+
+        fig.update_layout(
+            title=f'{self.plot_name} - Cumulative ETH Perpetual Yields',
+            yaxis_title='Cumulative Yield (%)',
+            template='plotly_white',
+            hovermode='x unified',
+            width=800,
+            height=600,
+            margin=dict(l=40, r=40, t=80, b=40)
+        )
+
+        fig.write_image(f'./results/{self.input_dir}/cumulative_eth_yields.png')
+        print(f"Plot saved to ./results/{self.input_dir}/cumulative_eth_yields.png")
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['binance_eth_yield'] / 0.18,
+            mode='lines',
+            name='Binance',
+            line=dict(color='blue', width=2),
+            opacity=0.7,
+            legendrank=1
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['bybit_eth_yield'] / 0.07,
+            mode='lines',
+            name='Bybit',
+            line=dict(color='orange', width=2),
+            opacity=0.7,
+            legendrank=2
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=yield_df['date'],
+            y=yield_df['okx_eth_yield'] / 0.09,
+            mode='lines',
+            name='OKX',
+            line=dict(color='green', width=2),
+            opacity=0.7,
+            legendrank=3
+        ))
+
+        fig.update_layout(
+            title=f'{self.plot_name} - ETH Exchange Perpetual Yields',
+            yaxis_title='Yield (%)',
+            template='plotly_white',
+            hovermode='x unified',
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            ),
+            width=800,
+            height=600,
+            margin=dict(l=40, r=40, t=80, b=40)
+        )
+
+        fig.update_xaxes(tickformat='%b %Y')
+
+        fig.write_image(f'./results/{self.input_dir}/eth_exchange_yields.png')
+        print(f"Plot saved to ./results/{self.input_dir}/eth_exchange_yields.png")
+
+        eth_columns = [
+            'binance_ethusd_yield',
+            'binance_ethcm_yield',
+            'bybit_ethusd_yield',
+            'bybit_ethcm_yield',
+            'okx_ethusd_yield',
+            'okx_ethcm_yield'
+        ]
+
+        eth_yield_df = yield_df[eth_columns]
+
+        positive_counts_eth = (eth_yield_df >= 0).sum().sum()
+        negative_counts_eth = (eth_yield_df < 0).sum().sum()
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Pie(
+            values=[positive_counts_eth, negative_counts_eth], 
+            labels=['Positive', 'Negative'],
+            textinfo='percent',
+            hole=0.7, 
+            sort=False, 
+            direction='counterclockwise', 
+            marker=dict(colors=['green', 'red']),
+            opacity=1.0
+        ))
+
+        fig.update_layout(
+            title_text=f'ETH Perpetual Yield Day Counts',
+            showlegend=True,
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            ),
+            height=300,
+            width=300
+        )
+
+        fig.write_image(f'./results/{self.input_dir}/eth_yield_day_counts.png')
+        print(f"Plot saved to ./results/{self.input_dir}/eth_yield_day_counts.png")
 
 
     def visualise(self):
