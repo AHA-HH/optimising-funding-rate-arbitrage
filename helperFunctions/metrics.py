@@ -57,11 +57,11 @@ class Metrics:
         
         calmar_ratio = annualised_return / max_drawdown if max_drawdown != 0 else np.nan
         
-        formatted_annualised_return = round(annualised_return, 3)
-        formatted_sharpe_ratio = round(sharpe_ratio, 3)
-        formatted_max_drawdown = round(max_drawdown, 3)
-        formatted_sortino_ratio = round(sortino_ratio, 3)
-        formatted_calmar_ratio = round(calmar_ratio, 3)
+        formatted_annualised_return = round(annualised_return, 4)
+        formatted_sharpe_ratio = round(sharpe_ratio * np.sqrt(365), 4)
+        formatted_max_drawdown = round(max_drawdown, 4)
+        formatted_sortino_ratio = round(sortino_ratio, 4)
+        formatted_calmar_ratio = round(calmar_ratio, 4)
 
 
         self.logger.log_metrics(period, formatted_annualised_return, formatted_sharpe_ratio, formatted_max_drawdown, formatted_sortino_ratio, formatted_calmar_ratio)
@@ -206,8 +206,17 @@ class Metrics:
 
                 total_volume = matching_short_positions['open_value'].sum()
 
-                funding_yield = (funding_payment / total_volume) * 100
-                         
+                # funding_yield = (funding_payment / total_volume) * 100
+
+                # daily_funding_yield = (funding_payment / total_volume)
+                # annualised_funding_yield = (1 + daily_funding_yield) ** 365 - 1
+                # funding_yield = annualised_funding_yield * 100
+                
+                # funding_yield = (funding_payment / total_volume)  
+
+                daily_funding_yield = (funding_payment / total_volume)
+                funding_yield = (1 + daily_funding_yield) ** 365 - 1      
+                
                 if exchange == 'binance':
                     if pair == 'BTCUSDT':
                         daily_binance_btcusd += funding_yield
