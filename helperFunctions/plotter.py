@@ -59,9 +59,6 @@ class Plotter:
             collateral_log['pnl_funding'] = collateral_log[funding_columns].sum(axis=1)
             collateral_log['total_pnl'] = collateral_log['pnl_basis'] + collateral_log['pnl_funding']
         elif self.reinvest_type == True:
-            # collateral_log['pnl_basis'] = collateral_log[collateral_columns].sum(axis=1) - initial_investment
-            # collateral_log['pnl_funding'] = collateral_log[funding_columns].sum(axis=1)
-            # collateral_log['total_pnl'] = collateral_log['pnl_basis'] - collateral_log['pnl_funding']
             collateral_log['pnl_basis'] = collateral_log[unrealised_pnl_columns].sum(axis=1)
             collateral_log['pnl_funding'] = collateral_log[collateral_columns].sum(axis=1) - initial_investment
             collateral_log['total_pnl'] = collateral_log['pnl_basis'] + collateral_log['pnl_funding']
