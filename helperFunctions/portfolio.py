@@ -16,9 +16,7 @@ class Portfolio:
         self.bybit_pct = bybit_pct
         self.reinvest = reinvest
         
-        
-        # Set weight ranges for portfolio allocation
-        self.unallocated_weight_range = {'min': 0.1, 'max': 0.2} # 10-20% of each exchanged unallocated for flexibility and risk management
+        self.unallocated_weight_range = {'min': 0.1, 'max': 0.2}
         
         self.asset_weight_ranges = {
             'binance': {

@@ -45,8 +45,8 @@ class Strategy:
         
         if not os.path.exists(results_folder):
             os.makedirs(results_folder)
-
-        
+    
+    
     def generate_entry_signals(self, current_time) -> None:
         """
         Identify buy opportunity based on the funding rate.
@@ -87,48 +87,44 @@ class Strategy:
                         'time': row['time']
                     }
                     entry_signals.append(entry_signal)
+                    
         elif self.threshold_logic == 'complex':
-            if not fr_filter.empty:
-                for _, row in fr_filter.iterrows():
-                    # Get the previous funding rates for the same pair and exchange
+            if not buy_opp.empty:
+                for _, row in buy_opp.iterrows():
                     pair_filter = self.df['pair'] == row['pair']
                     exchange_filter = self.df['exchange'] == row['exchange']
+                    
+                    relevant_df = self.df[pair_filter & exchange_filter & perp_filter & (self.df['time'] <= current_time)].sort_values(by='time')
 
-                    # Sort the dataframe by time and get the relevant previous funding rates
-                    relevant_df = self.df[pair_filter & exchange_filter & perp_filter].sort_values(by='time')
-                    current_idx = relevant_df[relevant_df['time'] == current_time].index[0]
-
-                    # For OKX, check the previous twelve funding rates must be positive
-                    if row['exchange'] == 'okx':
-                        if current_idx >= 9:  # Ensure at least twelve previous rates exist
-                            prev_twelve_rates = relevant_df.iloc[current_idx-9:current_idx]['funding rate']
-
-                            # Ensure the previous twelve funding rates are positive
-                            if not (prev_twelve_rates > 0).all():
-                                continue  # Skip this row if the previous 12 rates aren't all positive
-
-                    # For other exchanges, check the previous two funding rates must be positive
-                    else:
-                        if current_idx >= 3:  # Ensure at least two previous rates exist
-                            prev_two_rates = relevant_df.iloc[current_idx-3:current_idx]['funding rate']
-
-                            # Ensure the previous two funding rates are positive
-                            if not (prev_two_rates > 0).all():
-                                continue  # Skip this row if the previous 2 rates aren't all positive
-
-                    # Check if the current funding rate is greater than the entry threshold
-                    if row['funding rate'] > self.entry_threshold:
-                        entry_signal = {
-                            'exchange': row['exchange'],
-                            'crypto': row['crypto'],
-                            'pair': row['pair'],
-                            'contract': row['contract'],
-                            'open_price': row['open'],
-                            'close_price': row['close'],
-                            'funding_rate': row['funding rate'],
-                            'time': row['time']
-                        }
-                        entry_signals.append(entry_signal)
+                    if len(relevant_df) >= 9:                            
+                        if row['exchange'] == 'okx':
+                            prev_nine_rates = relevant_df['funding rate'].iloc[-2:]
+                            if (prev_nine_rates > 0).all() == True:
+                                entry_signal = {
+                                    'exchange': row['exchange'],
+                                    'crypto': row['crypto'],
+                                    'pair': row['pair'],
+                                    'contract': row['contract'],
+                                    'open_price': row['open'],
+                                    'close_price': row['close'],
+                                    'funding_rate': row['funding rate'],
+                                    'time': row['time']
+                                }
+                                entry_signals.append(entry_signal)
+                        else:
+                            prev_three_rates = relevant_df['funding rate'].iloc[-2:]
+                            if (prev_three_rates > 0).all() == True:                        
+                                entry_signal = {
+                                    'exchange': row['exchange'],
+                                    'crypto': row['crypto'],
+                                    'pair': row['pair'],
+                                    'contract': row['contract'],
+                                    'open_price': row['open'],
+                                    'close_price': row['close'],
+                                    'funding_rate': row['funding rate'],
+                                    'time': row['time']
+                                }
+                                entry_signals.append(entry_signal)
 
         return entry_signals
 
@@ -154,11 +150,9 @@ class Strategy:
         else:
             raise ValueError("Invalid future pair.")
         
-        # Check if long position already exists to avoid opening it again and avoid repeating capital allocation issues
         long_position_exists = self.portfolio.find_open_position(crypto, spot_pair, exchange, 'long', margin)
         
         if not long_position_exists:
-            # Create a new long position
             new_long_position = Position(
                 position_type='long',
                 position_size=position_capital,
@@ -196,7 +190,6 @@ class Strategy:
                 elif crypto == 'ethereum':
                     self.portfolio.bybit_eth_collateral += capital_used
             
-            # Create a new short position
             new_short_position = Position(
                 position_type='short',
                 position_size=new_long_position.open_value,
@@ -211,14 +204,11 @@ class Strategy:
             
             self.portfolio.open_position(new_short_position)
             
-    
+
     def generate_exit_signals(self, current_time) -> None:
         """
         Identify sell opportunity based on the funding rate.
         """
-        if self.threshold_logic == 'hold':
-            return []
-        
         time_filter = self.df['time'] == current_time
         perp_filter = self.df['contract'] == 'perpetual'
         fr_filter = self.df[time_filter & perp_filter]
@@ -227,19 +217,62 @@ class Strategy:
         
         exit_signals = []
         
-        if not sell_opp.empty:
-            for _, row in sell_opp.iterrows():
-                exit_signal = {
-                    'exchange': row['exchange'],
-                    'crypto': row['crypto'],
-                    'pair': row['pair'],
-                    'contract': row['contract'],
-                    'open_price': row['open'],
-                    'close_price': row['close'],
-                    'funding_rate': row['funding rate'],
-                    'time': row['time']
-                }
-                exit_signals.append(exit_signal)
+        if self.threshold_logic == 'hold':
+            return []
+        
+        elif self.threshold_logic == 'simple':
+            if not sell_opp.empty:
+                for _, row in sell_opp.iterrows():
+                    exit_signal = {
+                        'exchange': row['exchange'],
+                        'crypto': row['crypto'],
+                        'pair': row['pair'],
+                        'contract': row['contract'],
+                        'open_price': row['open'],
+                        'close_price': row['close'],
+                        'funding_rate': row['funding rate'],
+                        'time': row['time']
+                    }
+                    exit_signals.append(exit_signal)
+                    
+        elif self.threshold_logic == 'complex':
+            if not sell_opp.empty:
+                for _, row in sell_opp.iterrows():
+                    pair_filter = self.df['pair'] == row['pair']
+                    exchange_filter = self.df['exchange'] == row['exchange']
+
+                    relevant_df = self.df[pair_filter & exchange_filter & perp_filter & (self.df['time'] <= current_time)].sort_values(by='time')
+
+                    if len(relevant_df) >= 9:
+                        prev_nine_rates = relevant_df['funding rate'].iloc[-5:]
+                        
+                        if row['funding rate'] < -0.0001:
+                            exit_signal = {
+                                'exchange': row['exchange'],
+                                'crypto': row['crypto'],
+                                'pair': row['pair'],
+                                'contract': row['contract'],
+                                'open_price': row['open'],
+                                'close_price': row['close'],
+                                'funding_rate': row['funding rate'],
+                                'time': row['time']
+                            }
+                            exit_signals.append(exit_signal)
+
+                        elif -0.0001 < row['funding rate'] < self.exit_threshold:
+                            if (prev_nine_rates < 0).all() == True:
+                                exit_signal = {
+                                    'exchange': row['exchange'],
+                                    'crypto': row['crypto'],
+                                    'pair': row['pair'],
+                                    'contract': row['contract'],
+                                    'open_price': row['open'],
+                                    'close_price': row['close'],
+                                    'funding_rate': row['funding rate'],
+                                    'time': row['time']
+                                }
+                                exit_signals.append(exit_signal)
+
         return exit_signals
     
     
@@ -339,17 +372,15 @@ class Strategy:
             
             # Determine the cooldown period
             if exchange == 'okx':
-                cooldown_period = pd.Timedelta(days=3) 
+                cooldown_period = pd.Timedelta(days=1) 
             else:
                 cooldown_period = pd.Timedelta(days=1)
 
             current_time = pd.to_datetime(time)
 
             if close_short_position is not None:
-                # Convert open_time to datetime for comparison
                 open_time = pd.to_datetime(close_short_position.open_time)
                 if (current_time - open_time) > cooldown_period:
-                    # Only close the position if it has been open for longer than the cooldown period
                     self.portfolio.close_position(close_short_position, close_price, time)
                     pnl_short = close_short_position.pnl
 
@@ -362,10 +393,8 @@ class Strategy:
             close_long_position = self.portfolio.find_open_position(crypto, spot_pair, exchange, 'long', margin)
 
             if close_long_position is not None:
-                # Convert open_time to datetime for comparison
                 open_time = pd.to_datetime(close_long_position.open_time)
                 if (current_time - open_time) > cooldown_period:
-                    # Only close the position if it has been open for longer than the cooldown period
                     self.portfolio.close_position(close_long_position, spot_price, time)
                     pnl_long = close_long_position.pnl
                     capital_used = close_long_position.position_size
@@ -416,28 +445,23 @@ class Strategy:
         """
         timestamps = self.df['time'].unique()
         
-        
         # check initial capital and assign to exchanges
         self.portfolio.assign_initial_capital_to_exchanges()
-        
         
         # loop through all timestamps
         # for current_time in timestamps[0:1641]:
         for current_time in timestamps:
             print(current_time)
             
-            
             # look for open short positions and calculate funding rate payments
             for short_position in self.portfolio.get_open_short_positions():
                 long_position = self.portfolio.get_corresponding_long_position(short_position)
                 self.portfolio.calculate_funding_payment_and_pnl_interval(self.df, short_position, long_position, current_time)
                 
-                
             # look for negative funding rates and close positions that match the signal
             for signal in self.generate_exit_signals(current_time):
                 self.close_positions(signal)
                 
-            
             # look for positive funding rates and open positions that match the signal
             entry_signals = self.generate_entry_signals(current_time)
             for signal in entry_signals:
@@ -453,8 +477,6 @@ class Strategy:
                     for signal in self.generate_close_all_signals(current_time):
                         self.close_positions(signal)
                     
-            
-            
             # log the collateral values
             self.portfolio.calculate_collateral_values(current_time, self.df)
 

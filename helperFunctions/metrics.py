@@ -208,14 +208,8 @@ class Metrics:
                     ]
 
                 total_volume = matching_short_positions['open_value'].sum()
-
-                # funding_yield = (funding_payment / total_volume) * 100
-
-                # daily_funding_yield = (funding_payment / total_volume)
-                # annualised_funding_yield = (1 + daily_funding_yield) ** 365 - 1
-                # funding_yield = annualised_funding_yield * 100
                 
-                # funding_yield = (funding_payment / total_volume)  
+                # funding_yield = (funding_payment / total_volume)
 
                 daily_funding_yield = (funding_payment / total_volume)
                 funding_yield = (1 + daily_funding_yield) ** 365 - 1      
