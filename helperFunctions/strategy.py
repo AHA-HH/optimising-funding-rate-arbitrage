@@ -56,6 +56,7 @@ class Strategy:
         fr_filter = self.df[time_filter & perp_filter]
         
         buy_opp = fr_filter[fr_filter['funding rate'] > self.entry_threshold]
+        potential_opp = fr_filter[(fr_filter['funding rate'] > 0) & ( self.entry_threshold > fr_filter['funding rate'])]
         
         entry_signals = []
         
@@ -96,24 +97,33 @@ class Strategy:
                     
                     relevant_df = self.df[pair_filter & exchange_filter & perp_filter & (self.df['time'] <= current_time)].sort_values(by='time')
 
-                    if len(relevant_df) >= 9:                            
-                        if row['exchange'] == 'okx':
-                            prev_nine_rates = relevant_df['funding rate'].iloc[-2:]
-                            if (prev_nine_rates > 0).all() == True:
-                                entry_signal = {
-                                    'exchange': row['exchange'],
-                                    'crypto': row['crypto'],
-                                    'pair': row['pair'],
-                                    'contract': row['contract'],
-                                    'open_price': row['open'],
-                                    'close_price': row['close'],
-                                    'funding_rate': row['funding rate'],
-                                    'time': row['time']
-                                }
-                                entry_signals.append(entry_signal)
-                        else:
-                            prev_three_rates = relevant_df['funding rate'].iloc[-2:]
-                            if (prev_three_rates > 0).all() == True:                        
+                    if len(relevant_df) >= 3:
+                        if row['funding rate'] > self.entry_threshold:                          
+                            # if row['exchange'] == 'okx':
+                                prev_three_rates = relevant_df['funding rate'].iloc[-2:]
+                                if (prev_three_rates > 0).all() == True:
+                                    entry_signal = {
+                                        'exchange': row['exchange'],
+                                        'crypto': row['crypto'],
+                                        'pair': row['pair'],
+                                        'contract': row['contract'],
+                                        'open_price': row['open'],
+                                        'close_price': row['close'],
+                                        'funding_rate': row['funding rate'],
+                                        'time': row['time']
+                                    }
+                                    entry_signals.append(entry_signal)
+            elif not potential_opp.empty:
+                for _, row in potential_opp.iterrows():
+                    pair_filter = self.df['pair'] == row['pair']
+                    exchange_filter = self.df['exchange'] == row['exchange']
+                    
+                    relevant_df = self.df[pair_filter & exchange_filter & perp_filter & (self.df['time'] <= current_time)].sort_values(by='time')
+
+                    if len(relevant_df) >= 15:
+                        if 0 < row['funding rate'] < self.entry_threshold:  
+                            prev_ptl_rates = relevant_df['funding rate'].iloc[-14:]
+                            if (prev_ptl_rates > 0).all() == True:
                                 entry_signal = {
                                     'exchange': row['exchange'],
                                     'crypto': row['crypto'],
@@ -244,7 +254,7 @@ class Strategy:
                     relevant_df = self.df[pair_filter & exchange_filter & perp_filter & (self.df['time'] <= current_time)].sort_values(by='time')
 
                     if len(relevant_df) >= 9:
-                        prev_nine_rates = relevant_df['funding rate'].iloc[-5:]
+                        prev_three_rates = relevant_df['funding rate'].iloc[-2:]
                         
                         if row['funding rate'] < -0.0001:
                             exit_signal = {
@@ -260,7 +270,7 @@ class Strategy:
                             exit_signals.append(exit_signal)
 
                         elif -0.0001 < row['funding rate'] < self.exit_threshold:
-                            if (prev_nine_rates < 0).all() == True:
+                            if (prev_three_rates < 0).all() == True:
                                 exit_signal = {
                                     'exchange': row['exchange'],
                                     'crypto': row['crypto'],
@@ -369,8 +379,7 @@ class Strategy:
                         self.portfolio.bybit_eth_collateral -= capital_used
         elif self.threshold_logic == 'complex':
             close_short_position = self.portfolio.find_open_position(crypto, future_pair, exchange, 'short', margin)
-            
-            # Determine the cooldown period
+
             if exchange == 'okx':
                 cooldown_period = pd.Timedelta(days=1) 
             else:
@@ -422,7 +431,6 @@ class Strategy:
                         self.portfolio.bybit_btc_collateral -= capital_used
                     elif crypto == 'ethereum':
                         self.portfolio.bybit_eth_collateral -= capital_used
-
 
 
     def save_logs(self, log_type: str, file_name: str) -> None:
