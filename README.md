@@ -7,8 +7,6 @@ The project organised as follows:
 
 ```bash
 │
-├── analysis/                  # Contains Jupyter notebooks used for specific calculations and plots
-│
 ├── data/                      # Directory containing data for testing
 │   └── all_exchanges.csv      # Preprocessed cryptocurrency data
 │
