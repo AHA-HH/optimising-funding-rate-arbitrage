@@ -1,4 +1,4 @@
-from enum import Enum
+# Everett, Caleb. 2024. finm33150-final-project. URL https://github.com/CalebEverett/finm33150-final-project/tree/master. Accessed: 23/08/2024.
 from dataclasses import dataclass
 
 @dataclass

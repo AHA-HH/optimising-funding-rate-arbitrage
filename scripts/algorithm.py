@@ -7,14 +7,14 @@ from helperFunctions.metrics import Metrics
 from helperFunctions.plotter import Plotter
 
 input_data_file = './data/all_exchanges.csv'
-entry_signal = 
-exit_signal = 
-capital = 
-binance_pct = 
-okx_pct = 
-bybit_pct = 
-output_folder = 'hold' # 'hold', 'simple_threshold', 'complex_threshold', 'simple_reinvest', 'complex_reinvest'
-threshold_logic = 'hold' # 'hold', 'simple', 'complex'
+entry_signal = 0.1
+exit_signal = 0
+capital = 10000000
+binance_pct = 1.0
+okx_pct = 0.0
+bybit_pct = 0.0
+output_folder = 'hold'
+threshold_logic = 'hold'
 reinvest = False
 close_positions = False
 

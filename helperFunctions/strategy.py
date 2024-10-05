@@ -98,21 +98,20 @@ class Strategy:
                     relevant_df = self.df[pair_filter & exchange_filter & perp_filter & (self.df['time'] <= current_time)].sort_values(by='time')
 
                     if len(relevant_df) >= 3:
-                        if row['funding rate'] > self.entry_threshold:                          
-                            # if row['exchange'] == 'okx':
-                                prev_three_rates = relevant_df['funding rate'].iloc[-2:]
-                                if (prev_three_rates > 0).all() == True:
-                                    entry_signal = {
-                                        'exchange': row['exchange'],
-                                        'crypto': row['crypto'],
-                                        'pair': row['pair'],
-                                        'contract': row['contract'],
-                                        'open_price': row['open'],
-                                        'close_price': row['close'],
-                                        'funding_rate': row['funding rate'],
-                                        'time': row['time']
-                                    }
-                                    entry_signals.append(entry_signal)
+                        if row['funding rate'] > self.entry_threshold:       
+                            prev_three_rates = relevant_df['funding rate'].iloc[-2:]
+                            if (prev_three_rates > 0).all() == True:
+                                entry_signal = {
+                                    'exchange': row['exchange'],
+                                    'crypto': row['crypto'],
+                                    'pair': row['pair'],
+                                    'contract': row['contract'],
+                                    'open_price': row['open'],
+                                    'close_price': row['close'],
+                                    'funding_rate': row['funding rate'],
+                                    'time': row['time']
+                                }
+                                entry_signals.append(entry_signal)
             elif not potential_opp.empty:
                 for _, row in potential_opp.iterrows():
                     pair_filter = self.df['pair'] == row['pair']
@@ -311,6 +310,7 @@ class Strategy:
                     'time': row['time']
                 }
                 close_signals.append(exit_signal)
+                
         return close_signals
     
 
@@ -457,7 +457,6 @@ class Strategy:
         self.portfolio.assign_initial_capital_to_exchanges()
         
         # loop through all timestamps
-        # for current_time in timestamps[0:1641]:
         for current_time in timestamps:
             print(current_time)
             

@@ -17,25 +17,20 @@ class Portfolio:
         self.reinvest = reinvest
         
         self.unallocated_weight_range = {'min': 0.1, 'max': 0.2}
-        
+
         self.asset_weight_ranges = {
             'binance': {
                 'bitcoin': {'min': 0.1, 'max': 0.6},
                 'ethereum': {'min': 0.05, 'max': 0.3}
             },
             'okx': {
-                'bitcoin': {'min': 0.1, 'max': 0.45},
-                'ethereum': {'min': 0.1, 'max': 0.45}
+                'bitcoin': {'min': 0.1, 'max': 0.6},
+                'ethereum': {'min': 0.05, 'max': 0.3}
             },
             'bybit': {
-                'bitcoin': {'min': 0.1, 'max': 0.55},
-                'ethereum': {'min': 0.05, 'max': 0.35}
+                'bitcoin': {'min': 0.1, 'max': 0.6},
+                'ethereum': {'min': 0.05, 'max': 0.3}
             }
-        }
-        
-        self.crypto_weight_ranges = {
-            'bitcoin': {'min': 0.0, 'max': 0.60},
-            'ethereum': {'min': 0.0, 'max': 0.45}
         }
         
         self.binance_liquid_cash = 0

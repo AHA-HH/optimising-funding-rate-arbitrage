@@ -1,0 +1,6 @@
+,binance_btcusd_yield,binance_btccm_yield,binance_ethusd_yield,binance_ethcm_yield,bybit_btcusd_yield,bybit_btccm_yield,bybit_ethusd_yield,bybit_ethcm_yield,okx_btcusd_yield,okx_btccm_yield,okx_ethusd_yield,okx_ethcm_yield,binance_btc_yield,binance_eth_yield,bybit_btc_yield,bybit_eth_yield,okx_btc_yield,okx_eth_yield,binance_total_yield,bybit_total_yield,okx_total_yield,btc_total_yield,eth_total_yield,total_yield
+Hold,0.571,0.652,0.374,0.386,0.672,0.86,0.343,0.359,0.625,0.588,0.345,0.382,1.222,0.76,1.531,0.702,1.213,0.726,1.982,2.234,1.939,3.967,2.188,6.155
+Simple,0.167,0.12,0.192,0.178,0.127,0.047,0.118,0.059,0.118,0.098,0.115,0.114,0.287,0.37,0.174,0.177,0.216,0.229,0.657,0.351,0.445,0.677,0.776,1.453
+Simple Reinvest,0.167,0.12,0.192,0.178,0.127,0.021,0.118,0.059,0.118,0.098,0.115,0.114,0.287,0.37,0.148,0.177,0.216,0.23,0.657,0.325,0.445,0.651,0.777,1.428
+Complex,0.149,0.098,0.171,0.152,0.113,0.042,0.105,0.052,0.111,0.099,0.111,0.114,0.247,0.324,0.155,0.158,0.21,0.226,0.571,0.313,0.435,0.612,0.707,1.319
+Complex Reinvest,0.149,0.098,0.171,0.152,0.113,0.019,0.105,0.052,0.111,0.099,0.111,0.109,0.247,0.324,0.132,0.158,0.21,0.221,0.571,0.29,0.43,0.589,0.702,1.291

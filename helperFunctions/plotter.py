@@ -78,7 +78,7 @@ class Plotter:
             y=collateral_log['pnl_basis'],
             mode='lines',
             name='P&L Basis',
-            line=dict(width=1, color='blue'),
+            line=dict(width=1, color='green'),
             hovertemplate='P&L Basis: $%{y:.2f}<br>Date: %{x}',
             yaxis='y1'
         ))
@@ -88,39 +88,18 @@ class Plotter:
             y=collateral_log['cumulative_pnl_basis_pct'],
             mode='lines',
             name='P&L Basis',
-            line=dict(width=1, color='blue'),
+            line=dict(width=1, color='green'),
             hovertemplate='P&L Basis: %{y:.2f}%<br>Date: %{x}',
             yaxis='y2',
             showlegend=False
         ))
-
-        fig.add_trace(go.Scatter(
-            x=collateral_log.index,
-            y=collateral_log['pnl_funding'],
-            mode='lines',
-            name='P&L Funding',
-            line=dict(width=1, color='green'),
-            hovertemplate='P&L Funding: $%{y:.2f}<br>Date: %{x}',
-            yaxis='y1'
-        ))
         
-        fig.add_trace(go.Scatter(
-            x=collateral_log.index,
-            y=collateral_log['cumulative_pnl_funding_pct'],
-            mode='lines',
-            name='P&L Funding',
-            line=dict(width=1, color='green'),
-            hovertemplate='P&L Funding: %{y:.2f}%<br>Date: %{x}',
-            yaxis='y2',
-            showlegend=False
-        ))
-
         fig.add_trace(go.Scatter(
             x=collateral_log.index,
             y=collateral_log['total_pnl'],
             mode='lines',
             name='P&L Total',
-            line=dict(width=1, color='orange'),
+            line=dict(width=1, color='blue'),
             hovertemplate='Total P&L: $%{y:.2f}<br>Date: %{x}',
             yaxis='y1'
         ))
@@ -130,11 +109,34 @@ class Plotter:
             y=collateral_log['cumulative_total_pnl_pct'],
             mode='lines',
             name='P&L Total',
-            line=dict(width=1, color='orange'),
+            line=dict(width=1, color='blue'),
             hovertemplate='Total P&L: %{y:.2f}%<br>Date: %{x}',
             yaxis='y2',
             showlegend=False
         ))
+
+        fig.add_trace(go.Scatter(
+            x=collateral_log.index,
+            y=collateral_log['pnl_funding'],
+            mode='lines',
+            name='P&L Funding',
+            line=dict(width=1, color='orange'),
+            hovertemplate='P&L Funding: $%{y:.2f}<br>Date: %{x}',
+            yaxis='y1'
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=collateral_log.index,
+            y=collateral_log['cumulative_pnl_funding_pct'],
+            mode='lines',
+            name='P&L Funding',
+            line=dict(width=1, color='orange'),
+            hovertemplate='P&L Funding: %{y:.2f}%<br>Date: %{x}',
+            yaxis='y2',
+            showlegend=False
+        ))
+
+
 
         fig.update_layout(
             yaxis=dict(title='P&L ($)'),
@@ -148,8 +150,8 @@ class Plotter:
                 xanchor='center',
                 yanchor='top'
             ),
-            width=1600,
-            height=600,
+            width=1200,
+            height=400,
             margin=dict(l=50, r=50, t=20, b=50)
         )
 
@@ -390,8 +392,8 @@ class Plotter:
                 xanchor='center',
                 yanchor='top'
             ),
-            width=1600,
-            height=600,
+            width=1200,
+            height=400,
             margin=dict(l=50, r=50, t=20, b=50)
         )
 
@@ -473,8 +475,8 @@ class Plotter:
                 xanchor='center',
                 yanchor='top'
             ),
-            width=1600,
-            height=600,
+            width=1200,
+            height=400,
             margin=dict(l=50, r=50, t=20, b=50)
         )
 
@@ -588,8 +590,8 @@ class Plotter:
                 xanchor='center',
                 yanchor='top'
             ),
-            width=1600,
-            height=600,
+            width=1200,
+            height=400,
             margin=dict(l=50, r=50, t=20, b=50)
         )
 
@@ -630,6 +632,94 @@ class Plotter:
 
         fig.write_image(f'./results/{self.input_dir}/cumulative_eth_yields.png')
         print(f"Plot saved to ./results/{self.input_dir}/cumulative_eth_yields.png")
+        
+        btc_columns = [
+            'binance_btcusd_yield',
+            'binance_btccm_yield',
+            'bybit_btcusd_yield',
+            'bybit_btccm_yield',
+            'okx_btcusd_yield',
+            'okx_btccm_yield'
+        ]
+
+        btc_yield_df = yield_df[btc_columns]
+
+        positive_counts_btc = (btc_yield_df >= 0).sum().sum()
+        negative_counts_btc = (btc_yield_df < 0).sum().sum()
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Pie(
+            values=[positive_counts_btc, negative_counts_btc], 
+            labels=['Positive', 'Negative'],
+            textinfo='percent',
+            hole=0.7, 
+            sort=False, 
+            direction='counterclockwise', 
+            marker=dict(colors=['green', 'red']),
+            opacity=1.0
+        ))
+
+        fig.update_layout(
+            title_text=f'BTC Perpetual Yield Day Counts',
+            showlegend=True,
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            ),
+            height=300,
+            width=300
+        )
+
+        fig.write_image(f'./results/{self.input_dir}/btc_yield_day_counts.png')
+        print(f"Plot saved to ./results/{self.input_dir}/btc_yield_day_counts.png")
+
+        eth_columns = [
+            'binance_ethusd_yield',
+            'binance_ethcm_yield',
+            'bybit_ethusd_yield',
+            'bybit_ethcm_yield',
+            'okx_ethusd_yield',
+            'okx_ethcm_yield'
+        ]
+
+        eth_yield_df = yield_df[eth_columns]
+
+        positive_counts_eth = (eth_yield_df >= 0).sum().sum()
+        negative_counts_eth = (eth_yield_df < 0).sum().sum()
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Pie(
+            values=[positive_counts_eth, negative_counts_eth], 
+            labels=['Positive', 'Negative'],
+            textinfo='percent',
+            hole=0.7, 
+            sort=False, 
+            direction='counterclockwise', 
+            marker=dict(colors=['green', 'red']),
+            opacity=1.0
+        ))
+
+        fig.update_layout(
+            title_text=f'ETH Perpetual Yield Day Counts',
+            showlegend=True,
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                y=-0.2,
+                xanchor='center',
+                yanchor='top'
+            ),
+            height=300,
+            width=300
+        )
+
+        fig.write_image(f'./results/{self.input_dir}/eth_yield_day_counts.png')
+        print(f"Plot saved to ./results/{self.input_dir}/eth_yield_day_counts.png")
 
 
     def visualise(self):
