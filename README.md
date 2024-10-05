@@ -6,25 +6,25 @@ Optimising Funding Rate Arbitrage - this project aims to explore and develop fu
 The project organised as follows:
 
 ```bash
-.
+│
 ├── analysis/                  # Contains Jupyter notebooks used for specific calculations and plots
 │
 ├── data/                      # Directory containing data for testing
-│   ├── all_exchanges.csv      # Preprocessed cryptocurrency data
+│   └── all_exchanges.csv      # Preprocessed cryptocurrency data
 │
 ├── helperFunctions/           # Helper functions for project
-│   └── dataHandling.py        # Class for preprocessing data
-│   └── logging.py             # Class for producing logs
-│   └── metrics.py             # Class for calculating metrics
-│   └── plotter.py             # Class for producing plots
-│   └── portfolio.py           # Class for portfolio management
-│   └── position.py            # Class for managing position data
+│   ├── dataHandling.py        # Class for preprocessing data
+│   ├── logging.py             # Class for producing logs
+│   ├── metrics.py             # Class for calculating metrics
+│   ├── plotter.py             # Class for producing plots
+│   ├── portfolio.py           # Class for portfolio management
+│   ├── position.py            # Class for managing position data
 │   └── strategy.py            # Class for strategy logic
 │
 ├── results/                   # Directory for storing plots, logs and metrics
 │
 ├── scripts/                   # Scripts to run for the project
-│   └── algorithm.py           # Script to run the strategy through the simulation
+│   ├── algorithm.py           # Script to run the strategy through the simulation
 │   └── dataPipeline.py        # Script to obtain the data needed for the simulation
 │
 ├── README.md                  # Documentation

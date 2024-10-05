@@ -1,0 +1,33 @@
+aiodns==3.2.0
+aiohappyeyeballs==2.3.4
+aiohttp==3.10.0
+aiosignal==1.3.1
+attrs==24.1.0
+Bottleneck @ file:///Users/cbousseau/work/recipes/ci_py311/bottleneck_1677925122241/work
+ccxt==4.3.73
+certifi==2024.7.4
+cffi==1.16.0
+charset-normalizer==3.3.2
+cryptography==43.0.0
+Cython==3.0.10
+frozenlist==1.4.1
+idna==3.7
+joblib @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_a357ltg47g/croot/joblib_1685113093574/work
+multidict==6.0.5
+numexpr @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_45yefq0kt6/croot/numexpr_1696515289183/work
+numpy==2.0.1
+pandas==2.2.2
+pycares==4.4.0
+pycparser==2.22
+python-dateutil @ file:///tmp/build/80754af9/python-dateutil_1626374649649/work
+pytz @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_6btwyyj8a1/croot/pytz_1695131592184/work
+requests==2.32.3
+schedule==1.2.2
+scikit-learn @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_b53p48pwor/croot/scikit-learn_1684954746053/work
+scipy==1.14.0
+six @ file:///tmp/build/80754af9/six_1644875935023/work
+threadpoolctl @ file:///Users/ktietz/demo/mc3/conda-bld/threadpoolctl_1629802263681/work
+typing_extensions==4.12.2
+tzdata @ file:///croot/python-tzdata_1690578112552/work
+urllib3==2.2.2
+yarl==1.9.4
