@@ -31,7 +31,7 @@ The project organised as follows:
 └── requirements.txt           # Python dependencies
 ```
 
-## Run Code
+## Run Project
 To run the project, follow these steps:
 1. Install Python Dependencies
 2. Configure Algorithm
